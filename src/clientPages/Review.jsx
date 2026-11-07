@@ -1,76 +1,44 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react'; // Thêm useEffect
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { NavLink, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { getListPost } from '../redux/postSlice';
 import ImageLoader from '../components/FormFields/ImageLoader';
 import { slug } from '../utils/constants.js';
-// url: /tin-tuc/:slug/:id
+import LkvnNewsSidebar from '../components/LkvnNewsSidebar.jsx';
 
-// =============================================================
-// Hiệu ứng xuất hiện mượt khi cuộn chuột (scroll reveal)
-// =============================================================
 const revealStyles = `
     .reveal-hidden { opacity: 0; }
     .reveal-in {
-        animation-duration: 0.85s;
+        animation-duration: 0.75s;
         animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
         animation-fill-mode: backwards;
     }
-    .reveal-up    { animation-name: revealUp; }
-    .reveal-left  { animation-name: revealLeft; }
-    .reveal-right { animation-name: revealRight; }
-    .reveal-zoom  { animation-name: revealZoom; }
-    .reveal-fade  { animation-name: revealFade; }
-
+    .reveal-up { animation-name: revealUp; }
     @keyframes revealUp {
-        from { opacity: 0; transform: translate3d(0, 36px, 0); }
+        from { opacity: 0; transform: translate3d(0, 24px, 0); }
         to   { opacity: 1; transform: translate3d(0, 0, 0); }
     }
-    @keyframes revealLeft {
-        from { opacity: 0; transform: translate3d(-48px, 0, 0); }
-        to   { opacity: 1; transform: translate3d(0, 0, 0); }
-    }
-    @keyframes revealRight {
-        from { opacity: 0; transform: translate3d(48px, 0, 0); }
-        to   { opacity: 1; transform: translate3d(0, 0, 0); }
-    }
-    @keyframes revealZoom {
-        from { opacity: 0; transform: scale(0.92); }
-        to   { opacity: 1; transform: scale(1); }
-    }
-    @keyframes revealFade {
-        from { opacity: 0; }
-        to   { opacity: 1; }
-    }
-
     @media (prefers-reduced-motion: reduce) {
         .reveal-in { animation: none !important; }
         .reveal-hidden { opacity: 1; }
     }
 `;
 
-const Reveal = ({ as: Tag = 'div', variant = 'up', delay = 0, className = '', children, style, ...rest }) => {
+const Reveal = ({ as: Tag = 'div', delay = 0, className = '', children, ...rest }) => {
     const ref = useRef(null);
     const [visible, setVisible] = useState(false);
 
     useEffect(() => {
         const el = ref.current;
         if (!el) return;
-        if (typeof IntersectionObserver === 'undefined') {
-            setVisible(true);
-            return;
-        }
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setVisible(true);
-                    observer.disconnect();
-                }
-            },
-            { threshold: 0, rootMargin: '0px 0px -8% 0px' }
-        );
+        const observer = new IntersectionObserver(([entry]) => {
+            if (entry.isIntersecting) {
+                setVisible(true);
+                observer.disconnect();
+            }
+        }, { threshold: 0.05 });
         observer.observe(el);
         return () => observer.disconnect();
     }, []);
@@ -78,8 +46,8 @@ const Reveal = ({ as: Tag = 'div', variant = 'up', delay = 0, className = '', ch
     return (
         <Tag
             ref={ref}
-            className={`${className} ${visible ? `reveal-in reveal-${variant}` : 'reveal-hidden'}`}
-            style={visible && delay ? { ...style, animationDelay: `${delay}ms` } : style}
+            className={`${className} ${visible ? 'reveal-in reveal-up' : 'reveal-hidden'}`}
+            style={{ animationDelay: `${delay}ms` }}
             {...rest}
         >
             {children}
@@ -87,165 +55,98 @@ const Reveal = ({ as: Tag = 'div', variant = 'up', delay = 0, className = '', ch
     );
 };
 
-const NewsCard = ({ news, index = 0 }) => (
-    <Reveal as={NavLink} variant="up" delay={(index % 4) * 100} to={`/tin-tuc/${slug(news.title)}/${news.id}`} className="block">
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow duration-300 h-full flex flex-col cursor-pointer">
-            {/* Image placeholder */}
-            <div className="w-full h-40 bg-gray-300 flex items-center justify-center text-gray-500">
-                <ImageLoader imagePath={news.image} className="w-full h-full rounded-md border object-cover" />
+const MainNewsRow = ({ news, index }) => (
+    <Reveal delay={(index % 4) * 80}>
+        <NavLink
+            to={`/tin-tuc/${slug(news.title)}/${news.id}`}
+            className="group block border-b border-dotted border-gray-300 pb-6 mb-6 last:border-b-0"
+        >
+            <h3 className="text-sm sm:text-base font-bold uppercase text-[#006837] group-hover:text-[#009245] transition-colors leading-snug mb-3">
+                {news.title}
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-start">
+                <div className="sm:col-span-5 md:col-span-4 aspect-[16/11] overflow-hidden border border-gray-200 bg-gray-100 shrink-0">
+                    <ImageLoader
+                        imagePath={news.image}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                </div>
+                <div className="sm:col-span-7 md:col-span-8">
+                    <p className="text-xs sm:text-[13px] text-gray-700 leading-relaxed line-clamp-4 text-justify">
+                        {news.description}
+                    </p>
+                </div>
             </div>
-            {/* Title & Content */}
-            <div className="p-4 flex flex-col flex-grow">
-                <h3 className="text-base font-bold text-gray-800 line-clamp-2 hover:text-orange-700 transition mb-2">
-                    {news.title}
-                </h3>
-                <p className="text-sm text-gray-600 line-clamp-3 flex-grow">
-                    {news.description}
-                </p>
-            </div>
-        </div>
+        </NavLink>
     </Reveal>
 );
 
-// Component Pagination
-const Pagination = ({ currentPage, totalPages, onPageChange, itemsPerPage, totalItems }) => {
-    const maxPagesToShow = 5;
-    let startPage, endPage;
-
-    if (totalPages <= maxPagesToShow) {
-        startPage = 1;
-        endPage = totalPages;
-    } else {
-        if (currentPage <= 3) {
-            startPage = 1;
-            endPage = maxPagesToShow;
-        } else if (currentPage + 1 >= totalPages) {
-            startPage = totalPages - maxPagesToShow + 1;
-            endPage = totalPages;
-        } else {
-            startPage = currentPage - 2;
-            endPage = currentPage + 2;
-        }
-    }
-
-    const pages = Array.from({ length: (endPage - startPage) + 1 }, (_, i) => startPage + i);
-
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
+    const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
     return (
-        <Reveal variant="up" className="flex flex-col gap-6 mt-10">
-            {/* Phần phân trang */}
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-                {/* Nút Previous */}
+        <div className="flex items-center justify-center gap-1.5 pt-6 border-t border-dotted border-gray-300">
+            <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1 text-xs border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-50"
+            >
+                <ChevronLeft className="w-4 h-4 inline" />
+            </button>
+            {pages.map((page) => (
                 <button
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-orange-50 hover:border-orange-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                    title="Trang trước"
+                    key={page}
+                    onClick={() => onPageChange(page)}
+                    className={`min-w-7 h-7 px-2 text-xs font-semibold rounded border transition-colors ${currentPage === page
+                        ? 'bg-[#006837] text-white border-[#006837]'
+                        : 'border-gray-300 text-gray-700 hover:bg-emerald-50'
+                        }`}
                 >
-                    <ChevronLeft className="w-5 h-5 text-gray-700" />
+                    {page}
                 </button>
-
-                {/* Dấu ... ở đầu */}
-                {startPage > 1 && (
-                    <span className="px-2 text-gray-400">...</span>
-                )}
-
-                {/* Các nút trang */}
-                {pages.map((page) => (
-                    <button
-                        key={page}
-                        onClick={() => onPageChange(page)}
-                        className={`min-w-10 h-10 border rounded-lg transition-all duration-200 text-sm font-medium
-                            ${currentPage === page
-                                ? 'bg-orange-600 text-white border-orange-600 shadow-md'
-                                : 'border-gray-300 text-gray-700 hover:bg-orange-50 hover:border-orange-400'
-                            }
-                        `}
-                    >
-                        {page}
-                    </button>
-                ))}
-
-                {/* Dấu ... ở cuối */}
-                {endPage < totalPages && (
-                    <span className="px-2 text-gray-400">...</span>
-                )}
-
-                {/* Nút Next */}
-                <button
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-orange-50 hover:border-orange-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                    title="Trang tiếp theo"
-                >
-                    <ChevronRight className="w-5 h-5 text-gray-700" />
-                </button>
-            </div>
-        </Reveal>
+            ))}
+            <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="px-2.5 py-1 text-xs border border-gray-300 rounded disabled:opacity-40 hover:bg-gray-50"
+            >
+                <ChevronRight className="w-4 h-4 inline" />
+            </button>
+        </div>
     );
 };
 
-// Component Thanh Tìm Kiếm tách riêng để tái sử dụng
-const SearchBar = ({ search, setSearch, className = '' }) => (
-    <div className={`bg-white p-4 rounded-xl shadow-md ${className}`}>
-        <h2 className="text-xl font-semibold mb-3 text-gray-800">Tìm kiếm</h2>
-        <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
-            <input
-                type="text"
-                placeholder="Tìm kiếm tiêu đề hoặc nội dung..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
-            />
-        </div>
-    </div>
-);
-
-const Review = () => {
+export default function Review() {
     const navigate = useNavigate();
     const dispatch = useDispatch();
     const { PostList, PostTotal } = useSelector((state) => state.post);
 
     const [search, setSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const limit = 20;
-    const totalPages = Math.ceil(PostTotal / limit);
-
-    // ========================================== INIT ========================================
-    const fetchList = async () => {
-        let res = await dispatch(getListPost({ page: currentPage, limit: limit })).unwrap();
-        if (res && res.EC !== 0) {
-            toast.error(res.EM);
-        }
-    };
+    const limit = 10;
+    const totalPages = Math.ceil((PostTotal || 0) / limit);
 
     useEffect(() => {
-        fetchList();
-    }, [currentPage]);
+        dispatch(getListPost({ page: currentPage, limit }))
+            .unwrap()
+            .then((res) => {
+                if (res && res.EC !== 0) toast.error(res.EM);
+            });
+    }, [currentPage, dispatch]);
 
     useEffect(() => {
         setCurrentPage(1);
     }, [search]);
 
-    // --- LOGIC TỰ ĐỘNG CHUYỂN HƯỚNG KHI CÓ 1 TIN---
     useEffect(() => {
-        if (
-            PostTotal === 1 &&
-            PostList.length === 1 &&
-            currentPage === 1
-        ) {
-            navigate(`/tin-tuc/${PostList[0].id}`, {
-                replace: true,
-            });
+        if (PostTotal === 1 && PostList?.length === 1 && currentPage === 1) {
+            navigate(`/tin-tuc/${PostList[0].id}`, { replace: true });
         }
     }, [PostTotal, PostList, currentPage, navigate]);
 
-    // Logic lọc tin tức (Giữ nguyên)
     const filteredNews = useMemo(() => {
+        if (!PostList) return [];
         if (!search) return PostList;
-
         const lower = search.toLowerCase();
-
         return PostList.filter(news =>
             news.title?.toLowerCase().includes(lower) ||
             news.description?.toLowerCase().includes(lower)
@@ -253,79 +154,47 @@ const Review = () => {
     }, [search, PostList]);
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-white">
             <style>{revealStyles}</style>
-            <main className="max-w-0xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-                <Reveal as="h1" variant="up" className="text-3xl md:text-4xl font-black mb-12 bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
-                    Bài viết
-                </Reveal>
+                    {/* ===================== CỘT TRÁI (TÁI SỬ DỤNG COMPONENT) ===================== */}
+                    <div className="lg:col-span-4 order-2 lg:order-1">
+                        <LkvnNewsSidebar search={search} setSearch={setSearch} />
+                    </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-
-                    {/* Main Content - Giờ chiếm full width */}
-                    <div className="lg:col-span-3">
-                        {/* Grid News - 4 cột trên màn hình lớn */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                            {filteredNews.map((news, index) => (
-                                <NewsCard key={news.id} news={news} index={index} />
-                            ))}
+                    {/* ===================== CỘT PHẢI (DANH SÁCH BÀI VIẾT) ===================== */}
+                    <div className="lg:col-span-8 order-1 lg:order-2 space-y-6">
+                        <div className="border-b border-dotted border-gray-300 pb-2">
+                            <h1 className="text-xl sm:text-2xl font-black text-[#006837] tracking-tight">
+                                Tin Tức - Sự kiện
+                            </h1>
                         </div>
 
-                        {/* Pagination chỉ hiển thị khi có nhiều trang */}
+                        <div>
+                            {filteredNews.length > 0 ? (
+                                filteredNews.map((news, index) => (
+                                    <MainNewsRow key={news.id} news={news} index={index} />
+                                ))
+                            ) : (
+                                <p className="text-sm text-gray-500 py-8 text-center italic">
+                                    Đang cập nhật danh sách bài viết...
+                                </p>
+                            )}
+                        </div>
+
                         {totalPages > 1 && (
                             <Pagination
                                 currentPage={currentPage}
                                 totalPages={totalPages}
                                 onPageChange={setCurrentPage}
-                                itemsPerPage={limit}
-                                totalItems={PostTotal}
                             />
                         )}
                     </div>
-                    {/* Sidebar - 1/4 cột */}
-                    <div className="lg:col-span-1 space-y-8">
 
-                        {/* 2. Thanh tìm kiếm trong Sidebar (Ẩn đi ở màn hình nhỏ, hiển thị từ màn hình lớn trở lên) */}
-                        <Reveal variant="right" delay={100} className="hidden lg:block">
-                            <SearchBar search={search} setSearch={setSearch} />
-                        </Reveal>
-
-                        {/* Banner Dọc */}
-                        <Reveal variant="right" delay={250} className="w-full aspect-[3/4] rounded-2xl shadow-xl relative overflow-hidden group cursor-pointer">
-                            <img
-                                src="/BannerBộLivestream.png"
-                                alt="Combo livestream"
-                                className="absolute inset-0 w-full h-full object-cover"
-                                loading="lazy"
-                            />
-
-                            {/* Overlay */}
-                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all"></div>
-
-                            {/* Content */}
-                            <div className="relative z-10 flex items-center justify-center h-full text-center text-white p-6">
-                                <div>
-                                    <div className="text-2xl font-black mb-4 leading-tight">
-                                        Combo Livestream Chất Lượng Cao
-                                    </div>
-                                    <div className="text-sm opacity-90 mb-6">
-                                        Khuyến mãi đặc biệt
-                                    </div>
-                                    <div className="inline-flex items-center gap-2 text-sm font-bold bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full group-hover:bg-white/30 transition-all"
-                                        onClick={() => navigate('/combo-livestream-thu-am/1/all')}
-                                    >
-                                        Xem ngay →
-                                    </div>
-                                </div>
-                            </div>
-                        </Reveal>
-
-                    </div>
                 </div>
             </main>
         </div>
     );
-};
-
-export default Review;
+}

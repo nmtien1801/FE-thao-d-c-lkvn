@@ -47,16 +47,16 @@ export default function Header({
 
   const menuItems = [
     { label: "TRANG CHỦ", path: "/trang-chu" },
-    { label: "SẢN PHẨM", path: "/san-pham/all/all" },
     {
-      label: "DỊCH VỤ CÀI ĐẶT PHẦN MỀM AUTOTUNE",
-      path: "/dich-vu/phan-mem-auto-tone",
+      label: "GIỚI THIỆU",
+      path: "/gioi-thieu",
     },
+    { label: "SẢN PHẨM", path: "/san-pham/all/all" },
+    { label: "TIN TỨC", path: "/review-detail" },
     {
-      label: "DỊCH VỤ SETUP LIVESTREAM",
+      label: "LIÊN HỆ",
       path: "/dich-vu/set-up-phong-livestream",
     },
-    { label: "REVIEW CHI TIẾT", path: "/review-detail" },
   ];
 
   // =========================================================
@@ -137,7 +137,7 @@ export default function Header({
   };
 
   // =========================================================
-  // ĐIỀU HƯỚNG TRONG DRAWER MOBILE (điều hướng + đóng drawer)
+  // ĐIỀU HƯỚNG TRONG DRAWER MOBILE
   // =========================================================
 
   const goFromDrawer = (path) => {
@@ -200,64 +200,62 @@ export default function Header({
       `}</style>
 
       {/* =====================================================
-          HEADER
+          HEADER (Dải chuyển màu mịn màng từ trắng -> xanh đều đặn)
       ===================================================== */}
-      <header className="sticky top-0 z-[100] w-full bg-[#ed792f] shadow-lg">
+      <header className="sticky top-0 z-[100] w-full bg-gradient-to-r from-white via-[#dcfce7] via-35% via-[#6ee7b7] via-70% to-[#00a651] shadow-md">
         {/* ===================================================
-            TOP BAR
+            TOP BAR (Đã gỡ viền cắt ngang và overlay làm đứt dải màu)
         =================================================== */}
-        <div className="border-b border-black/10 bg-[#e46a1e]/90 backdrop-blur-sm">
-          <div className="flex h-[38px] items-center justify-between px-4 text-[12px] text-white sm:px-6 lg:px-8">
-            {/* BÊN TRÁI: SĐT & HỖ TRỢ 24/7 */}
+        <div>
+          <div className="flex h-[38px] items-center justify-between px-4 text-[12px] sm:px-6 lg:px-8">
+            {/* BÊN TRÁI: KHU VỰC TÔNG SÁNG / TRẮNG */}
             <div className="flex shrink-0 items-center gap-3">
               <a
-                href="tel:0372672396"
-                className="group flex items-center gap-1.5 rounded-full bg-black/10 px-2.5 py-1 transition-all hover:bg-black/20"
+                href="tel:0964685128"
+                className="group flex items-center gap-1.5 rounded-full border border-emerald-300/60 bg-white/90 px-2.5 py-1 shadow-sm transition-all hover:bg-emerald-50"
               >
-                <div className="flex h-4 w-4 items-center justify-center rounded-full bg-white text-[#ed792f]">
+                <div className="flex h-4 w-4 items-center justify-center rounded-full bg-[#00a651] text-white">
                   <Phone size={10} strokeWidth={2.5} />
                 </div>
-                <span className="font-semibold tracking-wide text-white group-hover:text-yellow-200">
-                  037.267.2396
+                <span className="font-semibold tracking-wide text-emerald-900 group-hover:text-[#00a651]">
+                  0964.685.128
                 </span>
               </a>
 
-              <span className="hidden h-3 w-px bg-white/25 sm:inline-block" />
+              <span className="hidden h-3 w-px bg-emerald-400/50 sm:inline-block" />
 
-              <div className="hidden items-center gap-1.5 text-white/90 sm:flex">
-                <Headphones size={13} className="text-yellow-200" />
+              <div className="hidden items-center gap-1.5 text-emerald-950 sm:flex">
+                <Headphones size={13} className="text-[#00a651]" />
                 <span className="text-[11.5px] font-medium">Hỗ trợ 24/7</span>
               </div>
             </div>
 
-            {/* Ở GIỮA: TEXT CHẠY */}
+            {/* Ở GIỮA: VÙNG CHUYỂN TIẾP TRUNG GIAN */}
             <div className="mx-2 flex min-w-0 flex-1 items-center justify-center gap-2.5">
-              <div className="marquee-viewport h-full max-w-[280px] flex-1 sm:max-w-[340px] md:max-w-[420px]">
-                <div className="ticker-ltr flex items-center gap-1.5 text-white drop-shadow-sm">
-                  <span className="font-medium text-white/95">
-                    Đăng ký khách hàng thân thiết
+              <div className="marquee-viewport h-full max-w-[300px] flex-1 sm:max-w-[380px] md:max-w-[460px]">
+                <div className="ticker-ltr flex items-center gap-2 text-xs drop-shadow-sm sm:text-sm">
+                  <span>🌿</span>
+                  <span className="font-semibold text-emerald-950">
+                    Thành viên Sống Xanh
                   </span>
-                  <span className="font-bold text-yellow-300">•</span>
-                  <span className="font-bold text-yellow-200">
-                    Nhận ngay ưu đãi cực khủng
+                  <span className="font-bold text-emerald-700">•</span>
+                  <span className="font-bold text-emerald-900">
+                    Tích lũy dưỡng tâm, nhận quà thảo mộc
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* BÊN PHẢI: ĐIỀU HƯỚNG */}
-            <div className="flex shrink-0 items-center gap-1 font-medium sm:gap-2">
+            {/* BÊN PHẢI: KHU VỰC NỀN XANH LỤC */}
+            <div className="flex shrink-0 items-center gap-1 font-medium text-white drop-shadow-sm sm:gap-2">
               {userInfo?.userName ? (
                 <div
                   className="group flex cursor-pointer items-center gap-2 rounded px-2 py-1 transition-colors hover:bg-white/10 md:hidden"
                   onClick={() => navigate("/profile/info")}
                 >
-                  {/* Avatar tròn chứa icon */}
-                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/15 transition-transform group-hover:scale-105">
+                  <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/20 transition-transform group-hover:scale-105">
                     <User size={11} strokeWidth={2} />
                   </div>
-
-                  {/* Tên người dùng hiển thị bên cạnh */}
                   <p className="max-w-[120px] truncate text-xs font-bold leading-tight transition-colors group-hover:text-yellow-200 sm:max-w-[160px]">
                     {userInfo?.userName}
                   </p>
@@ -265,37 +263,27 @@ export default function Header({
               ) : (
                 <>
                   <button
-                    onClick={() => navigate("/register")}
-                    className="rounded px-2 py-0.5 transition-colors hover:bg-black/15 hover:text-yellow-200"
-                  >
-                    Đăng ký
-                  </button>
-
-                  <span className="text-white/30">|</span>
-
-                  <button
                     onClick={() => navigate("/login")}
-                    className="rounded px-2 py-0.5 transition-colors hover:bg-black/15 hover:text-yellow-200"
+                    className="rounded px-2 py-0.5 transition-colors hover:bg-black/10 hover:text-yellow-200"
                   >
                     Đăng nhập
                   </button>
-
-                  <span className="hidden text-white/30 md:inline">|</span>
+                  <span className="hidden text-white/50 md:inline">|</span>
                 </>
               )}
 
               <button
                 onClick={() => navigate("/gio-hang")}
-                className="hidden rounded px-2 py-0.5 transition-colors hover:bg-black/15 hover:text-yellow-200 md:inline-block"
+                className="hidden rounded px-2 py-0.5 transition-colors hover:bg-black/10 hover:text-yellow-200 md:inline-block"
               >
                 Giỏ hàng
               </button>
 
-              <span className="hidden text-white/30 md:inline">|</span>
+              <span className="hidden text-white/50 md:inline">|</span>
 
               <button
                 onClick={() => navigate("/order-history")}
-                className="hidden rounded px-2 py-0.5 transition-colors hover:bg-black/15 hover:text-yellow-200 md:inline-block"
+                className="hidden rounded px-2 py-0.5 transition-colors hover:bg-black/10 hover:text-yellow-200 md:inline-block"
               >
                 Thanh toán
               </button>
@@ -305,10 +293,8 @@ export default function Header({
 
         {/* ===================================================
             MAIN HEADER
-            - Mobile: hàng 1 = logo + giỏ hàng + menu, hàng 2 = tìm kiếm
-            - md trở lên: 1 hàng như cũ
         =================================================== */}
-        <div className="bg-[#ed792f]">
+        <div>
           <div className="px-4 sm:px-6 lg:px-8">
             <div className="flex min-h-[60px] items-center justify-between gap-2 py-2 sm:gap-3 md:min-h-[92px] md:gap-4 md:py-0">
               {/* 1. LOGO */}
@@ -316,7 +302,7 @@ export default function Header({
                 <NavLink to="/trang-chu" className="group block">
                   <img
                     src="/logo.png"
-                    alt="CMIC Studio"
+                    alt="Logo"
                     className="
                       h-[28px] max-w-[72px]
                       sm:h-[34px] sm:max-w-[90px]
@@ -343,19 +329,19 @@ export default function Header({
                       overflow-visible
                       rounded-lg
                       border
-                      border-black/10
+                      border-emerald-200/80
                       bg-white
-                      shadow-[0_2px_12px_rgba(0,0,0,0.08)]
+                      shadow-[0_2px_12px_rgba(0,0,0,0.06)]
                       transition-all
                       duration-200
-                      focus-within:border-black/25
-                      focus-within:shadow-[0_4px_20px_rgba(0,0,0,0.14)]
+                      focus-within:border-[#00a651]
+                      focus-within:shadow-[0_4px_20px_rgba(0,166,81,0.18)]
                     "
                   >
                     <input
                       type="text"
                       value={searchQuery}
-                      placeholder="Bạn đang tìm kiếm thiết bị gì?"
+                      placeholder="Bạn đang tìm kiếm thảo dược gì?"
                       className="
                         min-w-0
                         flex-1
@@ -428,8 +414,8 @@ export default function Header({
                           font-bold
                           text-gray-700
                           transition-all
-                          hover:bg-orange-50
-                          hover:text-[#ed792f]
+                          hover:bg-emerald-50
+                          hover:text-[#00a651]
                         "
                       >
                         DANH MỤC
@@ -480,8 +466,8 @@ export default function Header({
                         text-gray-600
                         transition-all
                         duration-200
-                        hover:bg-gray-50
-                        hover:text-black
+                        hover:bg-emerald-50
+                        hover:text-[#00a651]
                       "
                     >
                       <Search
@@ -516,7 +502,7 @@ export default function Header({
                         <div className="sticky top-0 z-10 border-b border-gray-100 bg-white/95 px-4 py-2.5 backdrop-blur">
                           <p className="text-xs text-gray-500">
                             Tìm thấy{" "}
-                            <span className="font-bold text-[#ed792f]">
+                            <span className="font-bold text-[#00a651]">
                               {filteredSuggestions.length}
                             </span>{" "}
                             sản phẩm phù hợp
@@ -539,7 +525,7 @@ export default function Header({
                               py-3
                               transition-colors
                               ${highlightedIndex === index
-                                ? "bg-orange-50"
+                                ? "bg-emerald-50"
                                 : "hover:bg-gray-50"
                               }
                             `}
@@ -566,7 +552,7 @@ export default function Header({
                             </div>
 
                             {item.price && (
-                              <span className="shrink-0 text-sm font-bold text-[#ed792f]">
+                              <span className="shrink-0 text-sm font-bold text-[#00a651]">
                                 {item.price.toLocaleString("vi-VN")} ₫
                               </span>
                             )}
@@ -579,7 +565,6 @@ export default function Header({
 
               {/* 3. CỘT PHẢI (DESKTOP ≥ lg): TÀI KHOẢN & GIỎ HÀNG */}
               <div className="hidden w-[190px] shrink-0 items-center justify-end gap-2 lg:flex">
-                {/* Đăng nhập */}
                 <button
                   onClick={() => navigate("/dang-nhap")}
                   className="
@@ -592,10 +577,10 @@ export default function Header({
                     py-2
                     text-white
                     transition-all
-                    hover:bg-black/10
+                    hover:bg-white/10
                   "
                 >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/15 transition-transform group-hover:scale-105">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/20 transition-transform group-hover:scale-105">
                     <User size={18} strokeWidth={2} />
                   </div>
                   <div className="text-left">
@@ -605,7 +590,7 @@ export default function Header({
                       </p>
                     ) : (
                       <>
-                        <p className="text-[10px] font-medium uppercase text-white/70">
+                        <p className="text-[10px] font-medium uppercase text-white/80">
                           Tài khoản
                         </p>
                         <p className="text-xs font-bold leading-tight">
@@ -616,7 +601,6 @@ export default function Header({
                   </div>
                 </button>
 
-                {/* Giỏ hàng */}
                 <button
                   onClick={() => navigate("/gio-hang")}
                   aria-label="Giỏ hàng"
@@ -631,7 +615,7 @@ export default function Header({
                     rounded-lg
                     text-white
                     transition-all
-                    hover:bg-black/10
+                    hover:bg-white/10
                   "
                 >
                   <ShoppingCart
@@ -668,7 +652,7 @@ export default function Header({
                 <button
                   onClick={() => navigate("/gio-hang")}
                   aria-label="Giỏ hàng"
-                  className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20 md:h-10 md:w-10"
+                  className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/15 text-white transition-all hover:bg-white/25 md:h-10 md:w-10"
                 >
                   <ShoppingCart size={20} strokeWidth={2} />
                   {cartCount > 0 && (
@@ -681,7 +665,7 @@ export default function Header({
                 <button
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                   aria-label="Menu"
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/10 text-white transition-all hover:bg-white/20 md:hidden"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/20 bg-white/15 text-white transition-all hover:bg-white/25 md:hidden"
                 >
                   {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
                 </button>
@@ -693,7 +677,7 @@ export default function Header({
         {/* =====================================================
             NAVIGATION (MENU NGANG)
         ===================================================== */}
-        <nav className="hidden border-t border-gray-200 bg-white shadow-sm md:block">
+        <nav className="hidden border-t border-emerald-100/70 bg-white/95 shadow-sm backdrop-blur md:block">
           <div className="px-4">
             <div className="flex items-center justify-center">
               {menuItems.map((item) => (
@@ -713,8 +697,8 @@ export default function Header({
                     lg:px-7
                     lg:text-[13px]
                     ${isActive
-                      ? "text-[#ed792f]"
-                      : "text-gray-700 hover:text-[#ed792f]"
+                      ? "text-[#00a651]"
+                      : "text-gray-700 hover:text-[#00a651]"
                     }
                   `}
                 >
@@ -728,7 +712,7 @@ export default function Header({
                           left-1/2
                           h-[3px]
                           -translate-x-1/2
-                          bg-[#ed792f]
+                          bg-[#00a651]
                           transition-all
                           duration-200
                           ${isActive ? "w-full" : "w-0 group-hover:w-full"}
@@ -755,10 +739,10 @@ export default function Header({
             className="fixed right-0 top-0 flex h-full w-[290px] max-w-[85vw] animate-[slideInRight_.25s_ease-out] flex-col bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-gray-100 bg-[#ed792f] px-5 py-4 text-white">
+            <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-emerald-600 to-[#00a651] px-5 py-4 text-white">
               <div>
-                <p className="text-[10px] font-medium tracking-widest text-white/70">
-                  CMIC STUDIO
+                <p className="text-[10px] font-medium tracking-widest text-emerald-100">
+                  THẢO DƯỢC TỰ NHIÊN
                 </p>
                 <h3 className="text-lg font-black">DANH MỤC</h3>
               </div>
@@ -772,7 +756,6 @@ export default function Header({
             </div>
 
             <nav className="flex-1 overflow-y-auto p-4">
-              {/* Menu chính */}
               <div className="space-y-1">
                 {menuItems.map((item) => (
                   <NavLink
@@ -788,7 +771,7 @@ export default function Header({
                       font-bold
                       transition-all
                       ${isActive
-                        ? "bg-orange-50 text-[#ed792f]"
+                        ? "bg-emerald-50 text-[#00a651]"
                         : "text-gray-700 hover:bg-gray-50"
                       }
                     `}
@@ -798,14 +781,13 @@ export default function Header({
                 ))}
               </div>
 
-              {/* Giỏ hàng / Thanh toán / Tài khoản */}
               <div className="mt-4 space-y-1 border-t border-gray-100 pt-4">
                 <button
                   onClick={() => goFromDrawer("/gio-hang")}
                   className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-sm font-bold text-gray-700 transition-all hover:bg-gray-50"
                 >
                   <span className="flex items-center gap-2">
-                    <ShoppingCart size={16} className="text-[#ed792f]" />
+                    <ShoppingCart size={16} className="text-[#00a651]" />
                     Giỏ hàng
                   </span>
                   {cartCount > 0 && (
@@ -819,28 +801,27 @@ export default function Header({
                   onClick={() => goFromDrawer("/order-history")}
                   className="flex w-full items-center gap-2 rounded-lg px-4 py-3 text-sm font-bold text-gray-700 transition-all hover:bg-gray-50"
                 >
-                  <CreditCard size={16} className="text-[#ed792f]" />
+                  <CreditCard size={16} className="text-[#00a651]" />
                   Thanh toán
                 </button>
               </div>
 
-              {/* Hotline */}
-              <div className="mt-6 rounded-xl bg-orange-50 p-4">
-                <p className="mb-1 text-xs font-bold text-[#ed792f]">
+              <div className="mt-6 rounded-xl bg-emerald-50 p-4">
+                <p className="mb-1 text-xs font-bold text-[#00a651]">
                   HOTLINE HỖ TRỢ
                 </p>
                 <a
-                  href="tel:0372672396"
+                  href="tel:0964685128"
                   className="flex items-center gap-2 text-sm font-bold text-gray-800"
                 >
-                  <Phone size={14} className="text-[#ed792f]" />
-                  037.267.2396
+                  <Phone size={14} className="text-[#00a651]" />
+                  0964.685.128
                 </a>
               </div>
             </nav>
 
             <div className="border-t border-gray-100 px-5 py-3 text-center">
-              <p className="text-[11px] text-gray-400">© 2026 CMIC Studio</p>
+              <p className="text-[11px] text-gray-400">© Thảo Dược Tự Nhiên</p>
             </div>
           </div>
         </div>
