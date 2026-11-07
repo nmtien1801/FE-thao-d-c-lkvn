@@ -1,0 +1,1075 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+    ArrowRight,
+    CheckCircle2,
+    RotateCcw,
+    X
+} from 'lucide-react';
+import { toast } from 'react-toastify';
+import ApiContact from "../../apis/ApiContact";
+import { isValidPhoneNumber } from '../../utils/constants.js';
+import ApiMapCrm from "../../apis/ApiMapCrm";
+
+// Component Biển Cảnh Báo chuẩn theo ảnh mẫu
+function WarningSignIcon({ className = "w-12 h-12 md:w-16 md:h-16" }) {
+    return (
+        <svg
+            viewBox="0 0 100 90"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className={className}
+        >
+            <path
+                d="M44.8 6.4a6 6 0 0 1 10.4 0l39.5 68.4A6 6 0 0 1 89.5 84H10.5a6 6 0 0 1-5.2-9.2L44.8 6.4z"
+                fill="#FFFFFF"
+                stroke="red"
+                strokeWidth="5"
+                strokeLinejoin="round"
+            />
+            <path
+                d="M46.5 14.5a4 4 0 0 1 7 0l35 60.5a4 4 0 0 1-3.5 6H15a4 4 0 0 1-3.5-6l35-60.5z"
+                fill="red"
+            />
+            <path
+                d="M50 32v24"
+                stroke="#FFFFFF"
+                strokeWidth="6"
+                strokeLinecap="round"
+            />
+            <circle cx="50" cy="67" r="3.5" fill="#FFFFFF" />
+        </svg>
+    );
+}
+
+// =============================================================
+// Hiệu ứng xuất hiện mượt khi cuộn chuột (scroll reveal)
+// =============================================================
+const revealStyles = `
+    .reveal-hidden { opacity: 0; }
+    .reveal-in {
+        animation-duration: 0.85s;
+        animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+        animation-fill-mode: backwards;
+    }
+    .reveal-fast { animation-duration: 0.3s; }
+    .reveal-up    { animation-name: revealUp; }
+    .reveal-left  { animation-name: revealLeft; }
+    .reveal-right { animation-name: revealRight; }
+    .reveal-zoom  { animation-name: revealZoom; }
+    .reveal-fade  { animation-name: revealFade; }
+
+    @keyframes revealUp {
+        from { opacity: 0; transform: translate3d(0, 36px, 0); }
+        to   { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+    @keyframes revealLeft {
+        from { opacity: 0; transform: translate3d(-48px, 0, 0); }
+        to   { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+    @keyframes revealRight {
+        from { opacity: 0; transform: translate3d(48px, 0, 0); }
+        to   { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+    @keyframes revealZoom {
+        from { opacity: 0; transform: scale(0.92); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes revealFade {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .reveal-in { animation: none !important; }
+        .reveal-hidden { opacity: 1; }
+    }
+`;
+
+function Reveal({ as: Tag = 'div', variant = 'up', delay = 0, className = '', children, style, ...rest }) {
+    const ref = useRef(null);
+    const [visible, setVisible] = useState(false);
+
+    useEffect(() => {
+        const el = ref.current;
+        if (!el) return;
+        if (typeof IntersectionObserver === 'undefined') {
+            setVisible(true);
+            return;
+        }
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setVisible(true);
+                    observer.disconnect();
+                }
+            },
+            { threshold: 0, rootMargin: '0px 0px -8% 0px' }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <Tag
+            ref={ref}
+            className={`${className} ${visible ? `reveal-in reveal-${variant}` : 'reveal-hidden'}`}
+            style={visible && delay ? { ...style, animationDelay: `${delay}ms` } : style}
+            {...rest}
+        >
+            {children}
+        </Tag>
+    );
+}
+
+
+export default function SetupLivestreamPage() {
+    // -------------------------------------------------------------
+    // Multi-step Form State
+    // -------------------------------------------------------------
+    const [step, setStep] = useState(1);
+    const [targetType, setTargetType] = useState('Nhà bán hàng e-commerce');
+    const [deviceType, setDeviceType] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [budgetNote, setBudgetNote] = useState('');
+    const [isSubmitted, setIsSubmitted] = useState(false);
+
+    // State phục vụ việc click xem full ảnh báo giá
+    const [previewImage, setPreviewImage] = useState(null);
+
+    // Đóng popup khi ấn phím Escape
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') {
+                setPreviewImage(null);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    // Xử lý chọn Ô 1 (Đối tượng) -> Tự động chuyển ngay sang Bước 2 (Chọn thiết bị)
+    const handleSelectTarget = (target) => {
+        setTargetType(target);
+        if (target === 'Nhà bán hàng e-commerce') {
+            setDeviceType('Máy ảnh');
+        } else {
+            setDeviceType('');
+        }
+        setStep(2);
+    };
+
+    // Xử lý chọn Ô 2 (Thiết bị) -> Tự động chuyển ngay sang Bước 3 (Nhập SĐT)
+    const handleSelectDevice = (device) => {
+        setDeviceType(device);
+        setStep(3);
+    };
+
+    // Xử lý sau khi nhập SĐT -> Gọi API rồi Chuyển sang Bước 4 (Báo giá & Ngân sách)
+    const handleNextToPrice = async (e) => {
+        e?.preventDefault?.();
+        if (!phoneNumber.trim()) {
+            toast.warning('Vui lòng nhập số điện thoại để nhận báo giá!');
+            return;
+        }
+
+        try {
+            if (!isValidPhoneNumber(phoneNumber.trim())) {
+                toast.warning('Số điện thoại không hợp lệ!');
+                return;
+            }
+
+            // Chỉ chuyển sang bước 4 khi gửi API thành công
+            setStep(4);
+
+        } catch (error) {
+            console.error("Lỗi gửi liên hệ:", error);
+            toast.error('Có lỗi xảy ra khi gửi thông tin. Vui lòng thử lại!');
+        }
+    };
+
+    // Gửi form cuối cùng
+    const handleFinalSubmit = async (e) => {
+        e.preventDefault();
+        // Chuẩn bị dữ liệu gửi đi (bạn có thể điều chỉnh key cho khớp với backend)
+        const contactData = {
+            name: "khách hàng quan tâm dịch vụ Livestream",
+            phone: phoneNumber,
+            email: "",
+            message: `Tôi đang quan tâm đến loại hình ${targetType} và sản phẩm tôi muốn tư vấn là ${deviceType}. Hãy liên hệ tới số điện thoại: ` + phoneNumber,
+        };
+
+        // gửi crm
+        let data = await ApiMapCrm.searchCustomerByPhoneOrEmailApi(contactData.phone, contactData.email);
+        if (data && Array.isArray(data.DT) && data.DT.length > 0) {
+            const customer = data.DT[0];
+            const customerId = Number(customer.id);
+
+            let res = await ApiMapCrm.createPurchaseHistory(customerId, {
+                issue: contactData.message
+            });
+        } else {
+            const customerResponse = await ApiMapCrm.createCustomer({
+                fullName: contactData.name,
+                phone: contactData.phone,
+                email: contactData.email,
+                ecosystem: 'CMIC_STUDIO'
+            });
+            const customerResult = customerResponse?.DT || customerResponse;
+            if (customerResult?.id) {
+                await ApiMapCrm.createPurchaseHistory(customerResult.id, {
+                    issue: contactData.message
+                });
+            }
+        }
+
+        // gửi thông báo đến lark và gửi email
+        let res = await ApiContact.sendContactApi(contactData);
+
+        setIsSubmitted(true);
+        toast.success('Đã gửi thông tin tư vấn thành công! CMIC STUDIO sẽ liên hệ sớm nhất.');
+    };
+
+    // Khảo sát lại từ đầu
+    const handleReset = () => {
+        setStep(1);
+        setTargetType('Nhà bán hàng e-commerce');
+        setDeviceType('');
+        setPhoneNumber('');
+        setBudgetNote('');
+        setIsSubmitted(false);
+        setPreviewImage(null);
+    };
+
+    // Lựa chọn ảnh báo giá phù hợp dựa trên đối tượng và thiết bị
+    const getPricingImage = () => {
+        if (targetType === 'Nhà bán hàng e-commerce') {
+            return {
+                title: "BÁO GIÁ GÓI BÁN HÀNG E-COMMERCE (CAMERA MÁY ẢNH)",
+                images: [
+                    "/dichvulive/ecommerce-camera-1.png",
+                    "/dichvulive/ecommerce-camera-2.png",
+                    "/dichvulive/ecommerce-camera-3.png",
+                ]
+            };
+        }
+        if (deviceType === 'Điện thoại') {
+            return {
+                title: "BÁO GIÁ GÓI IDOL LIVE STUDIO (ĐIỆN THOẠI)",
+                images: [
+                    "/dichvulive/idol-phone-1.png",
+                    "/dichvulive/idol-phone-2.png",
+                ]
+            };
+        }
+        if (deviceType === 'Máy ảnh') {
+            return {
+                title: "BÁO GIÁ GÓI IDOL LIVE STUDIO (MÁY ẢNH)",
+                images: [
+                    "/dichvulive/idol-camera-1.png",
+                    "/dichvulive/idol-camera-2.png",
+                ]
+            };
+        }
+        return {
+            title: "BẢNG BÁO GIÁ TỔNG HỢP CMIC STUDIO",
+            images: ["/dichvulive/bang-gia-tong-hop.png"]
+        };
+    };
+
+    // Danh sách Case study & Thương hiệu
+    const caseStudyRow1 = [
+        "/dichvulive/cs1.png", "/dichvulive/cs2.png", "/dichvulive/cs3.png",
+        "/dichvulive/cs4.png", "/dichvulive/cs5.png"
+    ];
+
+    const caseStudyRow2 = [
+        "/dichvulive/cs6.png", "/dichvulive/cs7.png", "/dichvulive/cs8.png",
+        "/dichvulive/cs9.png", "/dichvulive/cs10.png", "/dichvulive/cs11.png", "/dichvulive/cs12.png", "/dichvulive/cs13.png", "/dichvulive/cs14.png"
+    ];
+
+    const brands = [
+        { name: "AVANTA", src: "/thuonghieu/th1.png" },
+        { name: "LUMINA", src: "/thuonghieu/th2.png" },
+        { name: "ÁNH DƯƠNG", src: "/thuonghieu/th3.png" },
+        { name: "MENSPIRE", src: "/thuonghieu/th4.png" },
+        { name: "LUMINELLA", src: "/thuonghieu/th5.png" },
+        { name: "VANGUARD", src: "/thuonghieu/th6.png" },
+        { name: "SEN AN", src: "/thuonghieu/th7.png" },
+        { name: "CHRONOS AURA", src: "/thuonghieu/th8.png" },
+        { name: "GIA DỤNG AN KHANG", src: "/thuonghieu/th9.png" },
+        { name: "AURELIA LUNA", src: "/thuonghieu/th10.png" }
+    ];
+
+    const formatCurrency = (val) => {
+        if (!val) return '';
+        // Lọc bỏ tất cả ký tự không phải số
+        const cleanNumber = val.replace(/\D/g, '');
+        if (!cleanNumber) return '';
+        // Thêm dấu phẩy phân cách hàng nghìn
+        return Number(cleanNumber).toLocaleString('en-US');
+    };
+
+    const handleBudgetChange = (e) => {
+        const rawVal = e.target.value;
+        const formatted = formatCurrency(rawVal);
+        setBudgetNote(formatted);
+    };
+
+    return (
+        <div className="w-full bg-white font-sans text-gray-900 overflow-x-hidden">
+            <style>{revealStyles}</style>
+
+
+            {/* ========================================================= */}
+            {/* HERO: BANNER                                              */}
+            {/* ========================================================= */}
+            <Reveal variant="fade" className="relative w-full overflow-hidden max-h-[300px] sm:max-h-[400px] md:max-h-[500px] flex items-center justify-center">
+                <img
+                    src="/dvlivehero.png"
+                    alt="Banner Dịch Vụ AutoTune AI"
+                    className="w-full h-auto object-cover max-h-[300px] sm:max-h-[400px] lg:max-h-[500px]"
+                />
+            </Reveal>
+
+            {/* ========================================================= */}
+            {/* 1. HAI GÓI LIVESTREAM VÀ TICKER CHẠY NGANG               */}
+            {/* ========================================================= */}
+            <section className="relative bg-white pt-40 sm:pt-28 md:pt-48 pb-6 md:pb-8">
+                <div className="max-w-5xl mx-auto px-2 sm:px-4">
+                    {/* Mobile giữ nguyên -translate-y-1/2, web (md:) chỉnh -translate-y-[25%] để xích xuống dưới */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-[-10%] sm:-translate-y-[25%] w-full max-w-5xl px-2 sm:px-4 grid grid-cols-2 gap-2 sm:gap-4 md:gap-8 lg:gap-12 z-20">
+
+                        {/* Gói Bán Hàng E-Commerce */}
+                        <Reveal variant="left" delay={100} className="relative z-10 w-full p-[9px] sm:p-[12px] md:p-[16px]">
+                            {/* Quầng sáng lớn tỏa rộng phía sau */}
+                            <div className="absolute -inset-1.5 sm:-inset-2 md:-inset-3 bg-gradient-to-r from-orange-500 via-red-500 to-purple-600 rounded-2xl sm:rounded-3xl md:rounded-[38px] blur-md sm:blur-lg md:blur-xl opacity-80"></div>
+
+                            {/* VIỀN NGOÀI: loè mờ */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-orange-500 via-red-500 to-purple-600 rounded-2xl sm:rounded-3xl md:rounded-[36px] blur-[2px] sm:blur-[3px] md:blur-[4px]"></div>
+
+                            {/* Dải trắng giữa 2 viền: mờ nhẹ */}
+                            <div className="absolute inset-[3px] sm:inset-[4px] md:inset-[6px] bg-white rounded-[13px] sm:rounded-[21px] md:rounded-[31px] blur-[1.5px] sm:blur-[2px] md:blur-[3px] opacity-90"></div>
+
+                            {/* VIỀN TRONG: loè mờ */}
+                            <div className="absolute inset-[5px] sm:inset-[7px] md:inset-[10px] bg-gradient-to-r from-orange-500 via-red-500 to-purple-600 rounded-xl sm:rounded-2xl md:rounded-[27px] blur-[2px] sm:blur-[3px] md:blur-[4px]"></div>
+
+                            {/* Khung nền trắng chứa nội dung (giữ nét) */}
+                            <div className="relative z-10 w-full h-full rounded-[9px] sm:rounded-[13px] md:rounded-[22px] p-2.5 sm:p-4 md:p-8 text-center bg-white flex flex-col items-center justify-between shadow-[inset_0_0_10px_rgba(237,121,47,0.35),inset_0_0_20px_rgba(168,85,247,0.25)]">
+                                <div>
+                                    <div className="flex justify-center items-center gap-1.5 sm:gap-3 md:gap-4 mb-2 sm:mb-4 md:mb-6">
+                                        <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-full border border-red-500 p-0.5 sm:p-1 flex items-center justify-center relative">
+                                            <img src="/icons/tiktok-live.png" alt="TikTok Live" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.src = "https://cdn-icons-png.flaticon.com/512/3046/3046121.png"; }} />
+                                            <span className="absolute -bottom-1 bg-red-600 text-white text-[5px] sm:text-[6px] md:text-[8px] font-bold px-0.5 rounded leading-none">LIVE</span>
+                                        </div>
+                                        <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-full border border-blue-500 p-0.5 sm:p-1 flex items-center justify-center relative">
+                                            <img src="/icons/facebook-live.png" alt="FB Live" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.src = "https://cdn-icons-png.flaticon.com/512/5968/5968764.png"; }} />
+                                            <span className="absolute -bottom-1 bg-red-600 text-white text-[5px] sm:text-[6px] md:text-[8px] font-bold px-0.5 rounded leading-none">LIVE</span>
+                                        </div>
+                                        <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-full border border-orange-500 p-0.5 sm:p-1 flex items-center justify-center relative">
+                                            <img
+                                                src="/shopee-live.jpg"
+                                                alt="Shopee Live"
+                                                className="w-full h-full object-contain"
+                                            />
+                                            <span className="absolute -bottom-1 bg-red-600 text-white text-[5px] sm:text-[6px] md:text-[8px] font-bold px-0.5 rounded leading-none">LIVE</span>
+                                        </div>
+                                    </div>
+
+                                    <h3 className="text-[10px] sm:text-sm md:text-xl font-black uppercase text-black mb-1 sm:mb-2 md:mb-3 leading-tight">
+                                        XEM GÓI <span className="text-[#ed792f]">BÁN HÀNG E-COMMERCE</span>
+                                    </h3>
+
+                                    <p className="text-gray-700 text-[8px] sm:text-xs md:text-base leading-snug sm:leading-relaxed max-w-sm mx-auto mb-2.5 sm:mb-6 md:mb-8 font-medium line-clamp-3 sm:line-clamp-none">
+                                        Setup livestream trọn gói dành cho Nhà bán hàng Doanh nghiệp hoặc Cá nhân đang kinh doanh trên các nền tảng số.
+                                    </p>
+                                </div>
+
+                                <a
+                                    href="#tu-van-bao-gia"
+                                    onClick={() => {
+                                        handleSelectTarget('Nhà bán hàng e-commerce');
+                                    }}
+                                    className="px-3 py-1 sm:px-6 sm:py-2 md:px-10 md:py-3 bg-gradient-to-r from-[#ed792f] to-[#e66311] hover:brightness-105 text-white font-black text-[9px] sm:text-xs md:text-base rounded-full shadow-[0_3px_10px_rgba(237,121,47,0.3)] md:shadow-[0_6px_20px_rgba(237,121,47,0.4)] tracking-wide uppercase transition-all"
+                                >
+                                    BÁO GIÁ
+                                </a>
+                            </div>
+                        </Reveal>
+
+                        {/* Gói Idol Live Studio */}
+                        <Reveal variant="right" delay={250} className="relative z-10 w-full p-[9px] sm:p-[12px] md:p-[16px]">
+                            {/* Quầng sáng lớn tỏa rộng phía sau */}
+                            <div className="absolute -inset-1.5 sm:-inset-2 md:-inset-3 bg-gradient-to-r from-purple-600 via-red-500 to-orange-500 rounded-2xl sm:rounded-3xl md:rounded-[38px] blur-md sm:blur-lg md:blur-xl opacity-80"></div>
+
+                            {/* VIỀN NGOÀI: loè mờ */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-purple-600 via-red-500 to-orange-500 rounded-2xl sm:rounded-3xl md:rounded-[36px] blur-[2px] sm:blur-[3px] md:blur-[4px]"></div>
+
+                            {/* Dải trắng giữa 2 viền: mờ nhẹ */}
+                            <div className="absolute inset-[3px] sm:inset-[4px] md:inset-[6px] bg-white rounded-[13px] sm:rounded-[21px] md:rounded-[31px] blur-[1.5px] sm:blur-[2px] md:blur-[3px] opacity-90"></div>
+
+                            {/* VIỀN TRONG: loè mờ */}
+                            <div className="absolute inset-[5px] sm:inset-[7px] md:inset-[10px] bg-gradient-to-r from-purple-600 via-red-500 to-orange-500 rounded-xl sm:rounded-2xl md:rounded-[27px] blur-[2px] sm:blur-[3px] md:blur-[4px]"></div>
+
+                            {/* Khung nền trắng chứa nội dung (giữ nét) */}
+                            <div className="relative z-10 w-full h-full rounded-[9px] sm:rounded-[13px] md:rounded-[22px] p-2.5 sm:p-4 md:p-8 text-center bg-white flex flex-col items-center justify-between shadow-[inset_0_0_10px_rgba(168,85,247,0.35),inset_0_0_20px_rgba(237,121,47,0.25)]">
+                                <div>
+                                    <div className="flex justify-center items-center gap-1.5 sm:gap-3 md:gap-4 mb-2 sm:mb-4 md:mb-6">
+                                        <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-full border border-red-500 p-0.5 sm:p-1 flex items-center justify-center relative">
+                                            <img src="/icons/tiktok-live.png" alt="TikTok Live" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.src = "https://cdn-icons-png.flaticon.com/512/3046/3046121.png"; }} />
+                                            <span className="absolute -bottom-1 bg-red-600 text-white text-[5px] sm:text-[6px] md:text-[8px] font-bold px-0.5 rounded leading-none">LIVE</span>
+                                        </div>
+                                        <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-full border border-blue-500 p-0.5 sm:p-1 flex items-center justify-center relative">
+                                            <img src="/icons/facebook-live.png" alt="FB Live" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.src = "https://cdn-icons-png.flaticon.com/512/5968/5968764.png"; }} />
+                                            <span className="absolute -bottom-1 bg-red-600 text-white text-[5px] sm:text-[6px] md:text-[8px] font-bold px-0.5 rounded leading-none">LIVE</span>
+                                        </div>
+                                        <div className="w-6 h-6 sm:w-8 sm:h-8 md:w-12 md:h-12 rounded-full border border-green-500 p-0.5 sm:p-1 flex items-center justify-center relative">
+                                            <img
+                                                src="/bigo.jpg"
+                                                alt="Bigo Live"
+                                                className="w-full h-full object-contain"
+                                            />
+                                            <span className="absolute -bottom-1 bg-red-600 text-white text-[5px] sm:text-[6px] md:text-[8px] font-bold px-0.5 rounded leading-none">LIVE</span>
+                                        </div>
+                                    </div>
+
+                                    <h3 className="text-[10px] sm:text-sm md:text-xl font-black uppercase text-black mb-1 sm:mb-2 md:mb-3 leading-tight">
+                                        XEM GÓI <span className="text-[#ed792f]">IDOL LIVE STUDIO</span>
+                                    </h3>
+
+                                    <p className="text-gray-700 text-[8px] sm:text-xs md:text-base leading-snug sm:leading-relaxed max-w-sm mx-auto mb-2.5 sm:mb-6 md:mb-8 font-medium line-clamp-3 sm:line-clamp-none">
+                                        Setup livestream trọn gói dành cho Idol Ca hát muốn phát triển hình ảnh thương hiệu cá nhân trên các nền tảng số.
+                                    </p>
+                                </div>
+
+                                <a
+                                    href="#tu-van-bao-gia"
+                                    onClick={() => {
+                                        handleSelectTarget('Idol Live (ca hát)');
+                                    }}
+                                    className="px-3 py-1 sm:px-6 sm:py-2 md:px-10 md:py-3 bg-gradient-to-r from-[#ed792f] to-[#e66311] hover:brightness-105 text-white font-black text-[9px] sm:text-xs md:text-base rounded-full shadow-[0_3px_10px_rgba(237,121,47,0.3)] md:shadow-[0_6px_20px_rgba(237,121,47,0.4)] tracking-wide uppercase transition-all"
+                                >
+                                    BÁO GIÁ
+                                </a>
+                            </div>
+                        </Reveal>
+
+                    </div>
+                </div>
+
+                <Reveal variant="up" className="mt-8 md:mt-30 py-2 md:py-3 bg-gray-50 border-y border-gray-200 overflow-hidden whitespace-nowrap relative flex">
+                    <style>{`
+            @keyframes customMarquee {
+                0% { transform: translateX(0%); }
+                100% { transform: translateX(-50%); }
+            }
+            .run-marquee {
+                display: inline-flex;
+                width: max-content;
+                animation: customMarquee 20s linear infinite;
+            }
+            .run-marquee:hover {
+                animation-play-state: paused;
+            }
+        `}</style>
+
+                    <div className="run-marquee font-black text-black text-[10px] sm:text-xs md:text-base tracking-wide uppercase select-none">
+                        <span>+150 Phòng Live bàn giao &nbsp;|&nbsp; Hỗ trợ 24/7 &nbsp;|&nbsp; Bảo hành 1 đổi 1 &nbsp;|&nbsp; Setup toàn quốc &nbsp;|&nbsp; 037.2672.396 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        <span>+150 Phòng Live bàn giao &nbsp;|&nbsp; Hỗ trợ 24/7 &nbsp;|&nbsp; Bảo hành 1 đổi 1 &nbsp;|&nbsp; Setup toàn quốc &nbsp;|&nbsp; 037.2672.396 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        <span>+150 Phòng Live bàn giao &nbsp;|&nbsp; Hỗ trợ 24/7 &nbsp;|&nbsp; Bảo hành 1 đổi 1 &nbsp;|&nbsp; Setup toàn quốc &nbsp;|&nbsp; 037.2672.396 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                        <span>+150 Phòng Live bàn giao &nbsp;|&nbsp; Hỗ trợ 24/7 &nbsp;|&nbsp; Bảo hành 1 đổi 1 &nbsp;|&nbsp; Setup toàn quốc &nbsp;|&nbsp; 037.2672.396 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                    </div>
+                </Reveal>
+            </section>
+
+            {/* ========================================================= */}
+            {/* 2. BẠN ĐANG MẤT KHÁCH HÀNG VÌ...                          */}
+            {/* ========================================================= */}
+            <section className="py-4 md:py-14 bg-white">
+                <div className="max-w-6xl mx-auto px-4">
+                    <Reveal as="h2" variant="up" className="text-lg sm:text-xl md:text-3xl font-black text-center uppercase tracking-tight text-black mb-6 md:mb-12">
+                        BẠN ĐANG MẤT KHÁCH HÀNG VÌ...
+                    </Reveal>
+
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-4 lg:gap-6">
+                        <Reveal variant="up" delay={0} className="border border-[#E11D48] md:border-2 rounded-xl sm:rounded-2xl md:rounded-[24px] p-2 sm:p-4 md:p-5 text-center flex flex-col items-center justify-center min-h-[110px] sm:min-h-[160px] md:min-h-[210px] bg-rose-50/60 shadow-xs hover:shadow-sm transition-all">
+                            <div className="mb-1.5 sm:mb-3 md:mb-4">
+                                <WarningSignIcon className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12" />
+                            </div>
+                            <p className="text-[10px] sm:text-xs md:text-base text-gray-900 leading-tight sm:leading-relaxed font-medium">
+                                Ánh sáng mờ, giao diện nhợt nhạt, tổng thể nhìn thiếu chuyên nghiệp.
+                            </p>
+                        </Reveal>
+
+                        <Reveal variant="up" delay={130} className="border border-[#E11D48] md:border-2 rounded-xl sm:rounded-2xl md:rounded-[24px] p-2 sm:p-4 md:p-5 text-center flex flex-col items-center justify-center min-h-[110px] sm:min-h-[160px] md:min-h-[210px] bg-rose-50/60 shadow-xs hover:shadow-sm transition-all">
+                            <div className="mb-1.5 sm:mb-3 md:mb-4">
+                                <WarningSignIcon className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12" />
+                            </div>
+                            <p className="text-[10px] sm:text-xs md:text-base text-gray-900 leading-tight sm:leading-relaxed font-medium">
+                                Âm thanh rè, lẫn nhiều tạp âm, nghe không rõ.
+                            </p>
+                        </Reveal>
+
+                        <Reveal variant="up" delay={260} className="border border-[#E11D48] md:border-2 rounded-xl sm:rounded-2xl md:rounded-[24px] p-2 sm:p-4 md:p-5 text-center flex flex-col items-center justify-center min-h-[110px] sm:min-h-[160px] md:min-h-[210px] bg-rose-50/60 shadow-xs hover:shadow-sm transition-all">
+                            <div className="mb-1.5 sm:mb-3 md:mb-4">
+                                <WarningSignIcon className="w-6 h-6 sm:w-10 sm:h-10 md:w-12 md:h-12" />
+                            </div>
+                            <p className="text-[10px] sm:text-xs md:text-base text-gray-900 leading-tight sm:leading-relaxed font-medium">
+                                Tự setup lộn xộn, thiết bị không tương thích khiến phiên live giật lag.
+                            </p>
+                        </Reveal>
+                    </div>
+                </div>
+            </section>
+
+            {/* ========================================================= */}
+            {/* 3. GIẢI PHÁP TỪ CMIC STUDIO                               */}
+            {/* ========================================================= */}
+            <section className="py-8 md:py-12 bg-white">
+                <div className="max-w-6xl mx-auto px-4">
+                    <Reveal as="h2" variant="up" className="text-lg sm:text-xl md:text-3xl font-black text-center uppercase tracking-tight text-black mb-6 md:mb-10">
+                        GIẢI PHÁP TỪ CMIC STUDIO
+                    </Reveal>
+
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-4 md:gap-6">
+                        {[
+                            { id: "i0tMf2k0Tpc", title: "Bạn cần SETUP LIVESTREAM" },
+                            { id: "Lfz_8kEHJKY", title: "Muốn setup hát live CHUYÊN NGHIỆP" },
+                            { id: "c_q4lkbePqc", title: "Ta còn em.." }
+                        ].map((item, idx) => (
+                            <Reveal variant="up" delay={idx * 150}
+                                key={idx}
+                                className="relative aspect-[9/16] rounded-lg sm:rounded-xl md:rounded-2xl overflow-hidden shadow-sm md:shadow-xl bg-black border border-gray-200"
+                            >
+                                <iframe
+                                    className="w-full h-full object-cover"
+                                    src={`https://www.youtube.com/embed/${item.id}?rel=0&modestbranding=1`}
+                                    title={item.title}
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                    allowFullScreen
+                                ></iframe>
+                            </Reveal>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* ========================================================= */}
+            {/* 4. BẢNG SO SÁNH GIẢI PHÁP CHI TIẾT                        */}
+            {/* ========================================================= */}
+            <section className="py-8 md:py-12 bg-white">
+                <div className="max-w-6xl mx-auto px-4">
+                    <Reveal variant="up" className="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
+                        <table className="w-full min-w-[700px] text-left border-collapse text-xs md:text-base">
+                            <thead>
+                                <tr className="bg-[#ed792f] text-white">
+                                    <th className="p-3 md:p-5 w-[22%] font-extrabold uppercase text-center border-r border-orange-400 text-[11px] md:text-base">
+                                        HẠNG MỤC
+                                    </th>
+                                    <th className="p-3 md:p-5 w-[39%] font-extrabold uppercase text-center border-r border-orange-400 text-[11px] md:text-base">
+                                        GIẢI PHÁP E-COMMERCE LIVE DÀNH CHO<br />NHÀ BÁN HÀNG - CHỦ SHOP
+                                    </th>
+                                    <th className="p-3 md:p-5 w-[39%] font-extrabold uppercase text-center text-[11px] md:text-base">
+                                        GIẢI PHÁP IDOL LIVE DÀNH CHO<br />NHÀ SÁNG TẠO NỘI DUNG
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200 bg-white text-gray-700 leading-relaxed font-normal text-xs md:text-lg">
+                                <Reveal as="tr" variant="up" delay={0} className="hover:bg-orange-50/30 transition-colors">
+                                    <td className="p-3 md:p-5 font-bold text-gray-900 align-middle border-r border-gray-200 text-center md:text-left bg-gray-50/60 md:bg-transparent">
+                                        Hình ảnh & Ánh sáng
+                                    </td>
+                                    <td className="p-3 md:p-5 border-r border-gray-200 space-y-2 md:space-y-3">
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Sử dụng camera có <span className="text-[#ea580c] font-semibold">lấy nét tự động cực nhanh</span>, bắt nét ngay lập tức khi đưa sản phẩm sát vào ống kính.</span>
+                                        </p>
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Hệ thống đèn <span className="text-[#ea580c] font-semibold">chuẩn màu tự nhiên</span>, triệt tiêu tình trạng khách hoàn hàng vì <span className="text-[#ea580c] font-semibold">"màu thực tế khác trên live"</span>.</span>
+                                        </p>
+                                    </td>
+                                    <td className="p-3 md:p-5 space-y-2 md:space-y-3">
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Camera cảm biến lớn cùng ống kính khẩu độ mở to, tạo hiệu ứng <span className="text-[#ea580c] font-semibold">xóa phông mờ mịt chuẩn điện ảnh</span>.</span>
+                                        </p>
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Ánh sáng chuẩn Studio kết hợp <span className="text-[#ea580c] font-semibold">đèn RGB tạo khối</span>, làm mịn da và tôn thần thái nổi bật cho Idol.</span>
+                                        </p>
+                                    </td>
+                                </Reveal>
+
+                                <Reveal as="tr" variant="up" delay={110} className="bg-gray-50/40 hover:bg-orange-50/30 transition-colors">
+                                    <td className="p-3 md:p-5 font-bold text-gray-900 align-middle border-r border-gray-200 text-center md:text-left bg-gray-50/80 md:bg-transparent">
+                                        Không gian & Âm thanh
+                                    </td>
+                                    <td className="p-3 md:p-5 border-r border-gray-200 space-y-2 md:space-y-3">
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Setup bối cảnh dạng <span className="text-[#ea580c] font-semibold">Showroom thu nhỏ</span>, tối ưu kệ trưng bày gọn gàng và đậm dấu ấn thương hiệu.</span>
+                                        </p>
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Micro lọc ồn thông minh, <span className="text-[#ea580c] font-semibold">triệt tiêu hoàn toàn tạp âm</span> đóng hàng, tiếng kéo băng keo và tiếng ồn xung quanh.</span>
+                                        </p>
+                                    </td>
+                                    <td className="p-3 md:p-5 space-y-2 md:space-y-3">
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Phòng <span className="text-[#ea580c] font-semibold">tiêu âm chống vang (echo)</span>, giúp Idol thoải mái hát và bung nốt với âm lượng lớn.</span>
+                                        </p>
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Trang bị trọn bộ <span className="text-[#ea580c] font-semibold">Soundcard và Micro độ nhạy cao</span> chuẩn phòng thu biểu diễn.</span>
+                                        </p>
+                                    </td>
+                                </Reveal>
+
+                                <Reveal as="tr" variant="up" delay={220} className="hover:bg-orange-50/30 transition-colors">
+                                    <td className="p-3 md:p-5 font-bold text-gray-900 align-middle border-r border-gray-200 text-center md:text-left bg-gray-50/60 md:bg-transparent">
+                                        Thiết bị & Phần mềm phụ trợ
+                                    </td>
+                                    <td className="p-3 md:p-5 border-r border-gray-200 space-y-2 md:space-y-3">
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span><span className="text-[#ea580c] font-semibold">Màn hình nhắc lời/comment</span> đặt ngay dưới lens: Vừa nhìn thẳng người xem vừa theo dõi tồn kho và chốt đơn thời gian thực.</span>
+                                        </p>
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Phông xanh thông minh giúp <span className="text-[#ea580c] font-semibold">thay đổi background và gắn deal flash-sale</span> chỉ với 1 click.</span>
+                                        </p>
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-semibold">App làm đẹp tự nhiên</span>: Tôn dáng - sáng da mà vẫn giữ độ chi tiết trung thực cho chất liệu sản phẩm.
+                                        </p>
+                                    </td>
+                                    <td className="p-3 md:p-5 space-y-2 md:space-y-3">
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span><span className="text-[#ea580c] font-semibold">Màn hình tương tác cận cảnh</span>: Giữ ánh mắt tương tác tự nhiên với người xem, đọc donate không bị lệch góc nhìn.</span>
+                                        </p>
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Bộ lọc làm đẹp chuyên sâu, hiệu ứng visual bắt mắt giúp hình ảnh luôn <span className="text-[#ea580c] font-semibold">rạng rỡ và cuốn hút</span>.</span>
+                                        </p>
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Tích hợp <span className="text-[#ea580c] font-semibold">Auto-tune tôn giọng</span> cùng hiệu ứng âm thanh cổ vũ, PK kịch tính giữ chân người xem.</span>
+                                        </p>
+                                    </td>
+                                </Reveal>
+
+                                <Reveal as="tr" variant="up" delay={330} className="bg-gray-50/40 hover:bg-orange-50/30 transition-colors">
+                                    <td className="p-3 md:p-5 font-bold text-gray-900 align-middle border-r border-gray-200 text-center md:text-left bg-gray-50/80 md:bg-transparent">
+                                        Setup tận nơi & Bàn giao
+                                    </td>
+                                    <td className="p-3 md:p-5 border-r border-gray-200 space-y-2 md:space-y-3">
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Kỹ thuật viên <span className="text-[#ea580c] font-semibold">khảo sát trực tiếp tại kho</span>, lên layout tối ưu riêng cho từng ngành hàng.</span>
+                                        </p>
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span><span className="text-[#ea580c] font-semibold">Đào tạo 1-1 tại chỗ</span> cho nhân sự vận hành trơn tru toàn bộ quy trình trước khi bàn giao.</span>
+                                        </p>
+                                    </td>
+                                    <td className="p-3 md:p-5 space-y-2 md:space-y-3">
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Lắp đặt và cân chỉnh góc máy, âm thanh <span className="text-[#ea580c] font-semibold">tận nơi theo yêu cầu</span>.</span>
+                                        </p>
+                                        <p className="flex items-start gap-1.5 md:gap-2">
+                                            <span className="text-[#ea580c] font-bold mt-0.5 md:mt-1 text-[10px] md:text-sm">●</span>
+                                            <span>Hướng dẫn chi tiết cách làm chủ phần mềm và thiết bị để <span className="text-[#ea580c] font-semibold">tự tin bắt đầu phiên live ngay trong ngày</span>.</span>
+                                        </p>
+                                    </td>
+                                </Reveal>
+                            </tbody>
+                        </table>
+                    </Reveal>
+                </div>
+            </section>
+
+            {/* ========================================================= */}
+            {/* 5. TƯ VẤN NHẬN BÁO GIÁ                                     */}
+            {/* ========================================================= */}
+            <section id="tu-van-bao-gia" className="py-8 md:py-14 bg-white scroll-mt-6 flex justify-center items-center">
+                <div className="w-full max-w-[620px] px-4">
+                    <Reveal as="h2" variant="up" className="text-lg sm:text-xl md:text-2xl font-black text-center uppercase tracking-tight text-black mb-6 md:mb-10">
+                        TƯ VẤN NHẬN BÁO GIÁ
+                    </Reveal>
+
+                    {/* BƯỚC 1: Chọn Đối tượng */}
+                    {step === 1 && (
+                        <Reveal variant="up" className="rounded-2xl sm:rounded-[36px] border-2 sm:border-[3px] border-[#e8702a] bg-[#fffcf7] p-5 sm:p-8 md:p-12 shadow-sm transition-all duration-300">
+                            <h2 className="text-lg sm:text-2xl md:text-[30px] font-black text-[#e8702a] leading-tight tracking-tight mb-4 md:mb-6">
+                                Bạn thuộc đối tượng nào sau đây?
+                            </h2>
+
+                            <p className="text-xs sm:text-sm md:text-base font-bold text-[#e8702a] leading-relaxed mb-4 md:mb-6">
+                                Bạn vui lòng tick chọn ô phù hợp để nhận được báo giá đúng nhất.*
+                            </p>
+
+                            <div className="space-y-3 md:space-y-4 mb-6 md:mb-8">
+                                {[
+                                    "Nhà bán hàng e-commerce",
+                                    "Idol Live (ca hát)",
+                                    "Khác"
+                                ].map((item) => {
+                                    const isSelected = targetType === item;
+                                    return (
+                                        <div
+                                            key={item}
+                                            onClick={() => handleSelectTarget(item)}
+                                            className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl cursor-pointer transition-all duration-200 text-sm sm:text-base md:text-lg select-none ${isSelected
+                                                ? "bg-[#feddc7] text-black font-semibold border-2 border-[#e8702a] shadow-inner"
+                                                : "bg-[#faece0] text-[#6b4731] hover:bg-[#f7dfcf] border-2 border-transparent font-medium"
+                                                }`}
+                                        >
+                                            {item}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => handleSelectTarget(targetType)}
+                                className="w-full py-3 sm:py-4 bg-[#e8702a] hover:bg-[#d4621e] active:scale-[0.99] text-white font-black text-base sm:text-lg rounded-xl sm:rounded-2xl shadow-md uppercase tracking-wider transition-all duration-200 cursor-pointer"
+                            >
+                                GỬI NGAY
+                            </button>
+                        </Reveal>
+                    )}
+
+                    {/* BƯỚC 2: Chọn Thiết bị */}
+                    {step === 2 && (
+                        <Reveal variant="up" className="rounded-2xl sm:rounded-[36px] border-2 sm:border-[3px] border-[#e8702a] bg-[#fffcf7] p-5 sm:p-8 md:p-12 shadow-sm transition-all duration-300">
+                            <h2 className="text-lg sm:text-2xl md:text-[34px] font-black text-[#e8702a] leading-tight tracking-tight mb-4 md:mb-6">
+                                Bạn muốn livestream bằng thiết bị gì?
+                            </h2>
+
+                            <p className="text-xs sm:text-sm md:text-base font-bold text-[#e8702a] leading-relaxed mb-4 md:mb-6">
+                                Bạn vui lòng tick chọn ô phù hợp để nhận được báo giá đúng nhất.*
+                            </p>
+
+                            <div className="space-y-3 md:space-y-4 mb-6 md:mb-8">
+                                {(targetType === 'Nhà bán hàng e-commerce'
+                                    ? ["Máy ảnh"]
+                                    : ["Điện thoại", "Máy ảnh", "Tôi muốn tham khảo cả 2"]
+                                ).map((item) => {
+                                    const isSelected = deviceType === item;
+                                    return (
+                                        <div
+                                            key={item}
+                                            onClick={() => handleSelectDevice(item)}
+                                            className={`w-full py-3 sm:py-4 px-4 sm:px-6 rounded-xl sm:rounded-2xl cursor-pointer transition-all duration-200 text-sm sm:text-base md:text-lg select-none ${isSelected
+                                                ? "bg-[#feddc7] text-black font-semibold border-2 border-[#e8702a] shadow-inner"
+                                                : "bg-[#faece0] text-[#6b4731] hover:bg-[#f7dfcf] border-2 border-transparent font-medium"
+                                                }`}
+                                        >
+                                            {item}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const defaultDev = targetType === 'Nhà bán hàng e-commerce' ? 'Máy ảnh' : deviceType;
+                                    if (!defaultDev) {
+                                        toast.warning("Vui lòng tick chọn thiết bị livestream!");
+                                        return;
+                                    }
+                                    handleSelectDevice(defaultDev);
+                                }}
+                                className="w-full py-3 sm:py-4 bg-[#e8702a] hover:bg-[#d4621e] active:scale-[0.99] text-white font-black text-base sm:text-lg rounded-xl sm:rounded-2xl shadow-md uppercase tracking-wider transition-all duration-200 cursor-pointer"
+                            >
+                                GỬI NGAY
+                            </button>
+
+                            <div className="text-center mt-4 md:mt-6">
+                                <button
+                                    type="button"
+                                    onClick={handleReset}
+                                    className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500 hover:text-black transition-colors"
+                                >
+                                    <RotateCcw className="w-3.5 h-3.5" /> Khảo sát lại từ đầu
+                                </button>
+                            </div>
+                        </Reveal>
+                    )}
+
+                    {/* BƯỚC 3: Nhập SĐT */}
+                    {step === 3 && (
+                        <Reveal variant="up" className="rounded-2xl sm:rounded-[36px] border-2 sm:border-[3px] border-[#e8702a] bg-[#fffcf7] p-5 sm:p-8 md:p-12 shadow-sm transition-all duration-300">
+                            <h2 className="text-lg sm:text-2xl md:text-[34px] font-black text-[#e8702a] leading-tight tracking-tight mb-4 md:mb-6">
+                                CMIC STUDIO có thể liên hệ với bạn bằng cách nào?
+                            </h2>
+
+                            <p className="text-xs sm:text-sm md:text-base font-bold text-[#e8702a] leading-relaxed mb-4 md:mb-6">
+                                Tiếp theo, bạn chỉ cần nhập SĐT để nhận báo giá!*
+                            </p>
+
+                            <form onSubmit={handleNextToPrice}>
+                                <div className="mb-6 md:mb-8">
+                                    <input
+                                        type="tel"
+                                        autoFocus
+                                        required
+                                        value={phoneNumber}
+                                        onChange={(e) => setPhoneNumber(e.target.value)}
+                                        placeholder="Nhập số điện thoại của bạn..."
+                                        className="w-full py-3 sm:py-4 px-4 sm:px-5 bg-white border border-[#f5b890] rounded-xl sm:rounded-2xl outline-none focus:border-[#e8702a] focus:ring-2 focus:ring-orange-200 text-sm sm:text-base text-gray-900 transition-all placeholder:text-gray-400"
+                                    />
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    className="w-full py-3 sm:py-4 bg-[#e8702a] hover:bg-[#d4621e] active:scale-[0.99] text-white font-black text-base sm:text-lg rounded-xl sm:rounded-2xl shadow-md uppercase tracking-wider transition-all duration-200 cursor-pointer"
+                                >
+                                    GỬI NGAY
+                                </button>
+                            </form>
+                        </Reveal>
+                    )}
+
+                    {/* BƯỚC 4: Hiện Báo Giá Tương Ứng & Ô Ngân Sách */}
+                    {step === 4 && (() => {
+                        const pricing = getPricingImage();
+                        return (
+                            <div className="space-y-4 md:space-y-6">
+                                {/* Khối Danh Sách Ảnh Báo Giá */}
+                                <Reveal variant="up" className="rounded-2xl md:rounded-3xl border border-orange-200 bg-white p-3 sm:p-4 md:p-6 shadow-sm text-center">
+                                    <span className="inline-block px-3 py-1 md:px-4 md:py-1.5 rounded-full bg-orange-100 text-[#e8702a] font-extrabold text-[10px] sm:text-xs md:text-sm uppercase tracking-wider mb-3 md:mb-4">
+                                        {pricing.title}
+                                    </span>
+
+                                    <div
+                                        className={`w-screen relative left-1/2 -translate-x-1/2 px-2 sm:px-4 md:px-12 grid gap-3 sm:gap-4 md:gap-6 ${pricing.images.length === 3
+                                            ? "grid-cols-1 md:grid-cols-3"
+                                            : "grid-cols-1 md:grid-cols-2"
+                                            }`}
+                                    >
+                                        {pricing.images.map((imgSrc, idx) => (
+                                            <Reveal variant="zoom" delay={150 + idx * 120}
+                                                key={idx}
+                                                onClick={() => setPreviewImage(imgSrc)}
+                                                className="w-full rounded-xl md:rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 shadow-sm flex items-center justify-center p-1.5 md:p-2 cursor-zoom-in group transition-all"
+                                                title="Click để phóng to xem chi tiết"
+                                            >
+                                                <img
+                                                    src={imgSrc}
+                                                    alt={`${pricing.title} - Trang ${idx + 1}`}
+                                                    className="w-full h-auto object-contain mx-auto block group-hover:scale-[1.02] transition-transform duration-300"
+                                                />
+                                            </Reveal>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] sm:text-xs text-gray-400 mt-2 md:mt-3 italic">
+                                        (Click vào từng ảnh để phóng to toàn màn hình)
+                                    </p>
+                                </Reveal>
+
+                                {/* Khối Ô Khảo Sát Ngân Sách Cuối Cùng */}
+                                <Reveal variant="up" delay={100} className="rounded-2xl sm:rounded-[36px] border-2 sm:border-[3px] border-[#e8702a] bg-[#fffcf7] p-5 sm:p-8 md:p-12 shadow-sm transition-all duration-300">
+                                    <h2 className="text-lg sm:text-2xl md:text-[32px] font-black text-[#e8702a] leading-tight tracking-tight mb-3 md:mb-4">
+                                        Chi phí trong báo giá đã phù hợp với ngân sách của bạn chưa?
+                                    </h2>
+
+                                    <p className="text-xs sm:text-sm md:text-base font-bold text-[#e8702a] leading-relaxed mb-4 md:mb-6">
+                                        Nếu đã phù hợp với ngân sách, bạn vui lòng bỏ qua câu hỏi này. Đội ngũ của CMIC STUDIO sẽ liên hệ để trao đổi thêm. Nếu chưa, bạn hãy điền ngân sách mà mình mong muốn. Chúng tôi sẽ thiết kế báo giá mới phù hợp với ngân sách của bạn!
+                                    </p>
+
+                                    <form onSubmit={handleFinalSubmit}>
+                                        <div className="mb-6 md:mb-8">
+                                            <input
+                                                type="text"
+                                                inputMode="numeric"
+                                                value={budgetNote}
+                                                onChange={handleBudgetChange}
+                                                placeholder="Nhập ngân sách (ví dụ: 15,000,000 VNĐ)"
+                                                className="w-full py-3 sm:py-4 px-4 sm:px-5 bg-white border border-[#f5b890] rounded-xl sm:rounded-2xl outline-none focus:border-[#e8702a] focus:ring-2 focus:ring-orange-200 text-sm sm:text-base text-gray-900 transition-all placeholder:text-gray-400"
+                                            />
+                                        </div>
+
+                                        {!isSubmitted ? (
+                                            <button
+                                                type="submit"
+                                                className="w-full py-3 sm:py-4 bg-[#e8702a] hover:bg-[#d4621e] active:scale-[0.99] text-white font-black text-base sm:text-lg rounded-xl sm:rounded-2xl shadow-md uppercase tracking-wider transition-all duration-200 cursor-pointer"
+                                            >
+                                                GỬI NGAY
+                                            </button>
+                                        ) : (
+                                            <div className="w-full py-3 sm:py-4 bg-green-600 text-white font-bold rounded-xl sm:rounded-2xl text-center flex items-center justify-center gap-1.5 md:gap-2 text-sm sm:text-base">
+                                                <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5" />
+                                                ĐÃ GỬI THÔNG TIN THÀNH CÔNG!
+                                            </div>
+                                        )}
+                                    </form>
+
+                                    <div className="text-center mt-4 md:mt-6">
+                                        <button
+                                            type="button"
+                                            onClick={handleReset}
+                                            className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs text-gray-500 hover:text-black transition-colors"
+                                        >
+                                            <RotateCcw className="w-3.5 h-3.5" /> Khảo sát lại từ đầu
+                                        </button>
+                                    </div>
+                                </Reveal>
+                            </div>
+                        );
+                    })()}
+
+                </div>
+            </section>
+
+            {/* ========================================================= */}
+            {/* 6. CASE STUDY SETUP LIVESTREAM                            */}
+            {/* ========================================================= */}
+            <section className="py-8 md:py-12 bg-white overflow-hidden">
+                <style>{`
+                    @keyframes scrollLeft {
+                        0% { transform: translateX(0%); }
+                        100% { transform: translateX(-33.333%); }
+                    }
+                    @keyframes scrollRight {
+                        0% { transform: translateX(-33.333%); }
+                        100% { transform: translateX(0%); }
+                    }
+                    .marquee-left {
+                        display: flex;
+                        width: max-content;
+                        animation: scrollLeft 35s linear infinite;
+                    }
+                    .marquee-right {
+                        display: flex;
+                        width: max-content;
+                        animation: scrollRight 35s linear infinite;
+                    }
+                    .marquee-left:hover, .marquee-right:hover {
+                        animation-play-state: paused;
+                    }
+                `}</style>
+
+                <Reveal variant="up" className="max-w-6xl mx-auto px-4 mb-4 md:mb-8 text-center">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-black uppercase text-black tracking-wide leading-tight">
+                        CASE STUDY SETUP LIVESTREAM<br />CMIC STUDIO ĐÃ THỰC HIỆN
+                    </h2>
+                </Reveal>
+
+                <div className="space-y-3 md:space-y-4">
+                    <Reveal variant="fade" className="overflow-hidden w-full">
+                        <div className="marquee-left gap-3 md:gap-4">
+                            {[...caseStudyRow1, ...caseStudyRow1, ...caseStudyRow1].map((src, i) => (
+                                <div key={i} className="w-40 sm:w-60 md:w-72 aspect-video rounded-lg md:rounded-xl overflow-hidden shadow-sm md:shadow-md flex-shrink-0 bg-black">
+                                    <img
+                                        src={src}
+                                        alt="Case Study"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.src = "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=500&q=80";
+                                        }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </Reveal>
+
+                    <Reveal variant="fade" delay={150} className="overflow-hidden w-full">
+                        <div className="marquee-right gap-3 md:gap-4">
+                            {[...caseStudyRow2, ...caseStudyRow2, ...caseStudyRow2].map((src, i) => (
+                                <div key={i} className="w-32 sm:w-48 md:w-56 aspect-[3/4] rounded-lg md:rounded-xl overflow-hidden shadow-sm md:shadow-md flex-shrink-0 bg-black">
+                                    <img
+                                        src={src}
+                                        alt="Case Study"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            e.currentTarget.src = "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=500&q=80";
+                                        }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </Reveal>
+                </div>
+            </section>
+
+            {/* ========================================================= */}
+            {/* 7. MỘT SỐ THƯƠNG HIỆU ĐÃ HỢP TÁC                          */}
+            {/* ========================================================= */}
+            <section className="py-8 md:py-12 bg-white">
+                <div className="max-w-6xl mx-auto px-4">
+                    <Reveal variant="up" className="text-center mb-6 md:mb-10">
+                        <h3 className="text-base sm:text-xl md:text-2xl font-black uppercase tracking-wider text-black">
+                            MỘT SỐ THƯƠNG HIỆU ĐÃ HỢP TÁC
+                        </h3>
+                    </Reveal>
+
+                    {/* Mobile/App: grid-cols-4 (3 dòng) | Web (md:): grid-cols-5 (2 dòng chuẩn 10 logo) */}
+                    <div className="grid grid-cols-4 md:grid-cols-5 gap-3 sm:gap-6 md:gap-8 lg:gap-10 items-center justify-items-center">
+                        {brands.map((brand, i) => (
+                            <Reveal variant="zoom" delay={(i % 5) * 80}
+                                key={i}
+                                className="h-12 sm:h-16 md:h-20 lg:h-24 w-full flex items-center justify-center p-1 sm:p-2 hover:scale-105 transition-transform duration-300"
+                            >
+                                <img
+                                    src={brand.src}
+                                    alt={brand.name}
+                                    className="max-h-full max-w-full object-contain filter contrast-105"
+                                />
+                            </Reveal>
+                        ))}
+                    </div>
+
+                    <Reveal variant="up" delay={100} className="mt-8 md:mt-14 text-center">
+                        <a
+                            href="#tu-van-bao-gia"
+                            className="inline-flex items-center gap-2 md:gap-3 pl-6 pr-2 py-2 md:pl-8 md:pr-3 md:py-2.5 bg-[#e8702a] hover:bg-[#d8621d] text-white font-extrabold rounded-full shadow-sm md:shadow-md transition-all duration-300 hover:shadow-lg uppercase text-xs md:text-sm tracking-wider"
+                        >
+                            <span>TƯ VẤN BÁO GIÁ</span>
+                            <div className="w-6 h-6 md:w-8 md:h-8 bg-white rounded-full flex items-center justify-center text-[#e8702a] shadow-inner">
+                                <ArrowRight className="w-4 h-4 md:w-5 md:h-5 stroke-[2.5]" />
+                            </div>
+                        </a>
+                    </Reveal>
+                </div>
+            </section>
+
+            {/* ========================================================= */}
+            {/* MODAL LIGHTBOX: PHÓNG TO TOÀN MÀN HÌNH KHI BẤM VÀO ẢNH   */}
+            {/* ========================================================= */}
+            {previewImage && (
+                <div
+                    className="reveal-in reveal-fade reveal-fast fixed inset-0 z-[999999] bg-black/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 transition-opacity duration-300"
+                    onClick={() => setPreviewImage(null)}
+                >
+                    {/* Nút đóng góc phải */}
+                    <button
+                        type="button"
+                        onClick={() => setPreviewImage(null)}
+                        className="absolute top-4 right-4 sm:top-6 sm:right-6 text-white/90 hover:text-white bg-white/10 hover:bg-white/25 p-2 sm:p-3 rounded-full transition-all cursor-pointer z-[1000000] shadow-md"
+                        title="Đóng (Esc)"
+                    >
+                        <X className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.5]" />
+                    </button>
+
+                    {/* Vùng hiển thị ảnh Full */}
+                    <div
+                        className="reveal-in reveal-zoom reveal-fast relative z-[1000000] max-w-6xl max-h-[92vh] flex items-center justify-center select-none"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <img
+                            src={previewImage}
+                            alt="Ảnh báo giá chi tiết"
+                            className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl"
+                        />
+                    </div>
+                </div>
+            )}
+
+        </div>
+    );
+}
