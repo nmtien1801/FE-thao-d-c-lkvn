@@ -58,10 +58,6 @@ export default function ProductCard({ product, isTopSeller = false }) {
 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                <div className="absolute top-2 right-2 bg-red-500 text-white font-bold shadow-lg rounded-full px-3 py-1 text-xs">
-                    -25%
-                </div>
-
                 {/* Nút tim: Luôn hiển thị và sáng đỏ nếu isInCart = true */}
                 <button
                     onClick={handleAddToCart}
@@ -80,13 +76,15 @@ export default function ProductCard({ product, isTopSeller = false }) {
                 <div className="flex flex-col gap-1 mb-2 w-full min-w-0">
                     {/* Hàng trên: Giá bán chính + Giá gốc gạch ngang bên cạnh */}
                     <div className="flex items-baseline gap-1.5 min-w-0">
-                        <span className="text-xs sm:text-sm md:text-base font-bold text-orange-600 whitespace-nowrap inline-flex items-baseline scale-75 sm:scale-90 md:scale-100 origin-left">
-                            <span>{Number(product.price).toLocaleString('vi-VN')}</span>
-                            <span className="inline-block translate-y-[2px] text-[0.85em] underline">đ</span>
-                        </span>
-                        <span className="text-gray-400 line-through text-[9px] sm:text-[11px] font-medium whitespace-nowrap inline-flex items-baseline">
-                            <span>{(Number(product.price || 0) * 1.25).toLocaleString('vi-VN')}</span>
-                            <span className="inline-block translate-y-[1.5px] text-[0.85em] no-underline">đ</span>
+                        <span className="text-xs sm:text-sm md:text-base font-bold text-[#006837] whitespace-nowrap inline-flex items-baseline scale-75 sm:scale-90 md:scale-100 origin-left">
+                            {Number(product?.price) > 0 ? (
+                                <>
+                                    <span>Giá: {Number(product.price).toLocaleString('vi-VN')}</span>
+                                    <span className="inline-block translate-y-[2px] text-[0.85em] underline ml-0.5">đ</span>
+                                </>
+                            ) : (
+                                <span>Giá: Liên hệ</span>
+                            )}
                         </span>
                     </div>
 

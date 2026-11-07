@@ -52,10 +52,10 @@ export default function Header({
       path: "/gioi-thieu",
     },
     { label: "SẢN PHẨM", path: "/san-pham/all/all" },
-    { label: "TIN TỨC", path: "/review-detail" },
+    { label: "TIN TỨC", path: "/tin-tuc" },
     {
       label: "LIÊN HỆ",
-      path: "/dich-vu/set-up-phong-livestream",
+      path: "/lien-he",
     },
   ];
 

@@ -28,7 +28,7 @@ import { GetAccount } from "../redux/authSlice";
 import Cookies from "js-cookie";
 
 import Home from "../clientPages/TrangChu.jsx";
-import ServiceLive from "../clientPages/dichVu/DvLiveStream.jsx";
+import LienHe from "../clientPages/LienHe.jsx";
 import About from "../clientPages/GioiThieu.jsx";
 import ProductPageHandler from '../components/product/ProductPageHandler.jsx'
 import GioHang from '../clientPages/payment/GioHang.jsx'
@@ -37,6 +37,7 @@ import Review from '../clientPages/Review.jsx'
 import OrderHistoryPage from '../clientPages/payment/OrderHistoryPage.jsx'
 import StatusThanhToan from '../clientPages/payment/StatusThanhToan.jsx'
 import ProductDetail from '../components/product/ProductDetail.jsx'
+import PostDetail from '../components/post/postDetail.jsx'
 
 import ChinhSach1 from '../components/chinhsach/Chinhsach1.jsx'
 import ChinhSach2 from '../components/chinhsach/Chinhsach2.jsx'
@@ -95,12 +96,15 @@ function RouterRoot() {
           <Route index element={<Navigate to="trang-chu" replace />} />
           <Route path="trang-chu" element={<Home />} />
           <Route path="gioi-thieu" element={<About />} />
-          <Route path="review-detail" element={<Review />} />
+
+          {/* route tin tuc */}
+          <Route path="tin-tuc" element={<Review />} />
+          <Route path="/tin-tuc/:title/:id" element={<PostDetail />} />
 
           {/* path route: /product/ */}
           <Route path="san-pham/:id_product" element={<ProductDetail />} />
           <Route path=":name/*" element={<ProductPageHandler />} />
-          <Route path="dich-vu/set-up-phong-livestream" element={<ServiceLive />} />
+          <Route path="lien-he" element={<LienHe />} />
           <Route path="gio-hang" element={<GioHang />} />
           <Route path="payment" element={<ThanhToan />} />
           <Route path="order-status/:orderId" element={<StatusThanhToan />} />
@@ -140,9 +144,6 @@ function RouterRoot() {
           {/* route hr */}
           <Route path="hr/employees" element={<Employee />} />   {/* Nhân viên */}
           <Route path="hr/roles" element={<EmployeeRole />} />      {/* Phân quyền (ví dụ) */}
-
-          {/* route user cut video */}
-          <Route path="user-cut-video/manager" element={<UserCutVideoManager />} />
 
           {/* route hr manager orders */}
           <Route path="manager/orders" element={<OrderManager />} />

@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import { clearSearchResults } from '../redux/productSlice.js';
 import ApiProduct from '../apis/ApiProduct.js';
 import { slug } from '../utils/constants.js';
+import LkvnNewsSidebar from '../components/LkvnNewsSidebar.jsx';
 
 // Component hiệu ứng cuộn trang
 function RevealOnScroll({ children, className = "", delay = 0, duration = 600 }) {
@@ -64,21 +65,21 @@ const priceRanges = [
 const FilterSidebar = ({ filters, onFilterChange }) => {
     return (
         <RevealOnScroll duration={500} className="w-full md:w-56 lg:w-64 flex-shrink-0">
-            <div className="w-full p-3 sm:p-5 md:p-6 bg-white rounded-xl sm:rounded-2xl shadow-sm md:shadow-md top-4 self-start overflow-hidden">
-                <h2 className="text-sm sm:text-base md:text-lg font-bold text-gray-800 mb-3 md:mb-5 flex items-center gap-1.5 sm:gap-2">
-                    <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
+            <div className="w-full space-y-2">
+                <h3 className="text-[13px] font-extrabold uppercase text-[#006837] tracking-wider border-b border-dotted border-gray-300 pb-1 flex items-center gap-1.5">
+                    <Filter className="w-3.5 h-3.5 text-[#006837]" />
                     Bộ Lọc Giá
-                </h2>
+                </h3>
 
-                <div className="border-b border-gray-100 pb-1 md:pb-6 w-full">
-                    <div className="flex flex-nowrap overflow-x-auto md:flex-col gap-1.5 sm:gap-2 md:gap-3 pb-2 md:pb-0 scrollbar-none snap-x">
+                <div className="w-full pt-1">
+                    <div className="flex flex-nowrap overflow-x-auto md:flex-col gap-1.5 md:gap-2 pb-2 md:pb-0 scrollbar-none snap-x">
                         {priceRanges.map(range => {
                             const isChecked = filters.priceRange === range.value;
                             return (
                                 <label
                                     key={range.value}
-                                    className={`flex items-center space-x-1.5 sm:space-x-2 md:space-x-3 cursor-pointer group py-1.5 px-3 sm:py-2 sm:px-3.5 md:p-0 rounded-lg sm:rounded-xl transition-all border md:border-none snap-center flex-shrink-0
-                                        ${isChecked ? 'bg-orange-50 border-orange-500 md:bg-transparent' : 'bg-gray-50 border-gray-200 md:bg-transparent'}`}
+                                    className={`flex items-center space-x-2 cursor-pointer group py-1 px-1.5 rounded transition-colors snap-center flex-shrink-0
+                                        ${isChecked ? 'bg-emerald-50/70 text-[#006837] font-bold' : 'hover:bg-gray-50 text-gray-700'}`}
                                 >
                                     <input
                                         type="radio"
@@ -86,10 +87,9 @@ const FilterSidebar = ({ filters, onFilterChange }) => {
                                         value={range.value}
                                         checked={isChecked}
                                         onChange={() => onFilterChange('priceRange', range.value)}
-                                        className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-500 bg-gray-100 border-gray-300 focus:ring-orange-500 cursor-pointer"
+                                        className="w-3.5 h-3.5 text-[#006837] border-gray-300 focus:ring-[#006837] cursor-pointer accent-[#006837]"
                                     />
-                                    <span className={`text-xs sm:text-sm md:text-[15px] font-medium sm:font-semibold transition-colors whitespace-nowrap
-                                        ${isChecked ? 'text-orange-600 font-bold' : 'text-gray-600 group-hover:text-gray-800'}`}>
+                                    <span className="text-xs sm:text-[13px] transition-colors whitespace-nowrap">
                                         {range.label}
                                     </span>
                                 </label>
@@ -105,11 +105,10 @@ const FilterSidebar = ({ filters, onFilterChange }) => {
 // ================= CategoryTopMenu: ĐIỀU HƯỚNG URL ĐA CẤP =================
 const CategoryTopMenu = ({
     categoryList = [],
-    activeIds = [], // Mảng các ID đang chọn từ URL: [id_cha, id_con, id_chau...]
+    activeIds = [],
     onCategoryClick,
     onSubClick
 }) => {
-    // 1. Chỉ lấy danh mục CẤP GỐC (parentId === null) cho thanh trên cùng
     const activeCategories = useMemo(() => {
         if (!Array.isArray(categoryList)) return [];
 
@@ -120,12 +119,6 @@ const CategoryTopMenu = ({
                 children: (cat.children || []).filter(sub => sub.status === true || sub.status === 1)
             }));
     }, [categoryList]);
-
-    // Tìm danh mục cha (Cấp 1) đang active theo id đầu tiên trong URL
-    const currentActiveCat = useMemo(() => {
-        if (!activeIds[0] || activeIds[0] === 'all') return null;
-        return activeCategories.find(cat => String(cat.id) === String(activeIds[0]));
-    }, [activeCategories, activeIds]);
 
     const isAllSelected = activeIds.length === 0 || activeIds[0] === 'all';
 
@@ -138,8 +131,8 @@ const CategoryTopMenu = ({
                         onClick={() => onCategoryClick('all')}
                         className={`px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 rounded-lg sm:rounded-xl md:rounded-2xl text-xs sm:text-sm md:text-base font-semibold md:font-bold transition whitespace-nowrap
                             ${isAllSelected
-                                ? 'bg-orange-500 text-white shadow-md'
-                                : 'bg-white shadow-sm hover:bg-orange-50 text-gray-700'}`}
+                                ? 'bg-[#006837] text-white shadow-md'
+                                : 'bg-white shadow-sm hover:bg-emerald-50 text-gray-700'}`}
                     >
                         Tất cả
                     </button>
@@ -155,8 +148,8 @@ const CategoryTopMenu = ({
                                 onClick={() => onCategoryClick(cat)}
                                 className={`px-3 py-1.5 sm:px-4 sm:py-2 md:px-5 md:py-2.5 rounded-lg sm:rounded-xl md:rounded-2xl text-xs sm:text-sm md:text-base font-semibold md:font-bold transition whitespace-nowrap flex items-center gap-1
                                     ${isCatActive
-                                        ? 'bg-orange-500 text-white shadow-md'
-                                        : 'bg-white shadow-sm hover:bg-orange-50 text-gray-700'}`}
+                                        ? 'bg-[#006837] text-white shadow-md'
+                                        : 'bg-white shadow-sm hover:bg-emerald-50 text-gray-700'}`}
                             >
                                 <span>{cat.name}</span>
                                 {hasChildren && (
@@ -173,8 +166,8 @@ const CategoryTopMenu = ({
                                             onClick={() => onCategoryClick(cat)}
                                             className={`block w-full text-left px-4 py-2 text-xs sm:text-sm font-semibold transition-colors
                                                 ${isCatActive && (!activeIds[1] || activeIds[1] === 'all')
-                                                    ? 'bg-orange-100 text-orange-600 font-bold'
-                                                    : 'text-gray-700 hover:bg-orange-50'}`}
+                                                    ? 'bg-emerald-100 text-[#006837] font-bold'
+                                                    : 'text-gray-700 hover:bg-emerald-50'}`}
                                         >
                                             Tất cả {cat.name}
                                         </button>
@@ -187,8 +180,8 @@ const CategoryTopMenu = ({
                                                     onClick={() => onSubClick(cat, sub)}
                                                     className={`block w-full text-left px-4 py-2 text-xs sm:text-sm transition-colors
                                                         ${isSubActive
-                                                            ? 'bg-orange-100 text-orange-600 font-bold'
-                                                            : 'text-gray-700 hover:bg-orange-50 font-medium'}`}
+                                                            ? 'bg-emerald-100 text-[#006837] font-bold'
+                                                            : 'text-gray-700 hover:bg-emerald-50 font-medium'}`}
                                                 >
                                                     {sub.name}
                                                 </button>
@@ -253,7 +246,7 @@ const ProductsList = ({ products, currentPage, totalPages, onPageChange, loading
 
                     {loading && (
                         <div className="absolute inset-0 flex items-center justify-center bg-white/60">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#006837]"></div>
                         </div>
                     )}
                 </div>
@@ -274,7 +267,7 @@ const ProductsList = ({ products, currentPage, totalPages, onPageChange, loading
                         <button
                             onClick={() => onPageChange(currentPage - 1)}
                             disabled={currentPage === 1}
-                            className="p-2 sm:p-3 bg-white border border-gray-300 rounded-lg hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="p-2 sm:p-3 bg-white border border-gray-300 rounded-lg hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
                         </button>
@@ -290,7 +283,7 @@ const ProductsList = ({ products, currentPage, totalPages, onPageChange, loading
                                     key={`page-${page}`}
                                     onClick={() => onPageChange(page)}
                                     className={`px-3 py-1.5 sm:px-4 sm:py-2 text-sm sm:text-base font-bold rounded-lg transition-all
-                                        ${currentPage === page ? 'bg-orange-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-orange-100 border border-gray-300'}`}
+                                        ${currentPage === page ? 'bg-[#006837] text-white shadow-md' : 'bg-white text-gray-700 hover:bg-emerald-100 border border-gray-300'}`}
                                 >
                                     {page}
                                 </button>
@@ -300,7 +293,7 @@ const ProductsList = ({ products, currentPage, totalPages, onPageChange, loading
                         <button
                             onClick={() => onPageChange(currentPage + 1)}
                             disabled={currentPage === totalPages}
-                            className="p-2 sm:p-3 bg-white border border-gray-300 rounded-lg hover:bg-orange-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="p-2 sm:p-3 bg-white border border-gray-300 rounded-lg hover:bg-emerald-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
                         </button>
@@ -329,18 +322,15 @@ export default function SanPham() {
     const [isSearchMode, setIsSearchMode] = useState(searchParams.get('search') === 'true');
 
     // 1. Phân tích URL: /name/idcha/idcon/idchau...
-    // segments[0] là name/slug, các phần tử từ index 1 trở đi là các ID danh mục
     const { activeIds, targetCategoryId } = useMemo(() => {
         const segments = location.pathname.split('/').filter(Boolean);
         
-        // Nếu URL là /tat-ca/all/all hoặc trang chủ /san-pham
         if (segments.length <= 1 || segments[0] === 'tat-ca' || segments[0] === 'san-pham') {
             return { activeIds: [], targetCategoryId: 'all' };
         }
 
-        const ids = segments.slice(1); // Lấy các ID sau name: ['9', '7']
+        const ids = segments.slice(1);
         
-        // ID thực tế cần lọc sản phẩm là ID cuối cùng khác 'all'
         let targetId = 'all';
         for (let i = ids.length - 1; i >= 0; i--) {
             if (ids[i] && ids[i] !== 'all') {
@@ -386,8 +376,6 @@ export default function SanPham() {
                 setTotalPages(1);
                 setCurrentPage(1);
             } else {
-                // Gọi API backend với ID cuối cùng (ví dụ id của 'con' = 7, hoặc 'mic' = 9)
-                // Backend getFilteredProducts đã có hàm đệ quy tự động lấy tiếp các sản phẩm của cấp con/cháu
                 const res = await ApiProduct.filterProductApi(page, 9, targetCategoryId, filters.priceRange);
 
                 setProducts(res.DT?.products || []);
@@ -416,7 +404,6 @@ export default function SanPham() {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
 
-    // Click danh mục cha -> /:slug-cha/:idcha/all
     const handleCategoryClick = (cat) => {
         if (cat === 'all') {
             navigate('/tat-ca/all/all');
@@ -425,9 +412,7 @@ export default function SanPham() {
         }
     };
 
-    // Click danh mục con -> /:slug-con/:idcha/:idcon...
     const handleSubClick = (parentCat, subCat) => {
-        // Tạo đường dẫn chuẩn: /slug-con/idcha/idcon
         navigate(`/${slug(subCat.name)}/${parentCat.id}/${subCat.id}`);
     };
 
@@ -439,12 +424,12 @@ export default function SanPham() {
         <div className="min-h-screen bg-gray-50 p-4 sm:p-8 lg:p-12 font-sans scroll-smooth">
             {isSearchMode && (
                 <RevealOnScroll duration={500}>
-                    <div className="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded-lg flex items-center justify-between">
+                    <div className="mb-6 p-4 bg-emerald-50 border-l-4 border-[#006837] rounded-lg flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <span className="text-2xl">🔍</span>
                             <div>
-                                <p className="font-bold text-blue-900">Chế độ tìm kiếm</p>
-                                <p className="text-sm text-blue-700">Đang hiển thị {searchResults?.length || 0} sản phẩm khớp</p>
+                                <p className="font-bold text-emerald-950">Chế độ tìm kiếm</p>
+                                <p className="text-sm text-[#006837]">Đang hiển thị {searchResults?.length || 0} sản phẩm khớp</p>
                             </div>
                         </div>
                         <button
@@ -452,7 +437,7 @@ export default function SanPham() {
                                 dispatch(clearSearchResults());
                                 navigate('/tat-ca/all/all');
                             }}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm"
+                            className="px-4 py-2 bg-[#006837] text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium text-sm"
                         >
                             Xóa tìm kiếm
                         </button>
@@ -470,10 +455,17 @@ export default function SanPham() {
             )}
 
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-8">
-                {!isSearchMode && (
-                    <FilterSidebar filters={filters} onFilterChange={handleFilterChange} />
-                )}
+                {/* CỘT TRÁI */}
+                <div className="w-full md:w-56 lg:w-64 flex-shrink-0 space-y-6">
+                    {!isSearchMode && (
+                        <FilterSidebar filters={filters} onFilterChange={handleFilterChange} />
+                    )}
+                    <RevealOnScroll duration={500}>
+                        <LkvnNewsSidebar showSearch={false} />
+                    </RevealOnScroll>
+                </div>
 
+                {/* CỘT PHẢI */}
                 <ProductsList
                     products={products}
                     currentPage={currentPage}

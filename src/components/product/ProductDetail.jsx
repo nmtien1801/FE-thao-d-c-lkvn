@@ -330,9 +330,6 @@ const ProductDetail = () => {
         }
     };
 
-    // ==========================================
-    // Lưu vào BE khi đăng nhập, localStorage khi là khách
-    // ==========================================
     const handleAddToCart = async () => {
         const cartItem = {
             id: String(product.id || id_product || ""),
@@ -386,12 +383,13 @@ const ProductDetail = () => {
     }
 
     return (
-        <div className="bg-[#f5f5f5] min-h-screen py-6 sm:py-8">
+        <div className="bg-[#f5f5f5] min-h-screen py-6 sm:py-8 font-sans">
             <div className="max-w-[1300px] mx-auto px-4">
                 <div className="bg-white rounded-xl shadow-sm overflow-hidden">
                     <div className="p-4 sm:p-6 lg:p-8">
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
 
+                            {/* Cột hình ảnh sản phẩm */}
                             <div className="lg:col-span-5 flex flex-col">
                                 <div className="relative w-full aspect-[4/3] rounded-lg border border-gray-100 flex items-center justify-center p-2 overflow-hidden bg-[#fafafa]">
                                     {selectedImage ? (
@@ -420,8 +418,8 @@ const ProductDetail = () => {
                                                         onMouseEnter={() => setSelectedImage(img.previewUrl)}
                                                         onClick={() => setSelectedImage(img.previewUrl)}
                                                         className={`relative shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-md border-2 overflow-hidden p-1 bg-white cursor-pointer transition-all ${isActive
-                                                            ? 'border-[#ed792f] shadow-sm ring-1 ring-[#ed792f]'
-                                                            : 'border-gray-200 hover:border-[#ed792f]/70'
+                                                            ? 'border-[#006837] shadow-sm ring-1 ring-[#006837]'
+                                                            : 'border-gray-200 hover:border-[#006837]/70'
                                                             }`}
                                                     >
                                                         <img
@@ -441,6 +439,7 @@ const ProductDetail = () => {
                                 </div>
                             </div>
 
+                            {/* Cột thông tin sản phẩm */}
                             <div className="lg:col-span-7 flex flex-col">
                                 <div className="flex items-start gap-2.5 mb-3">
                                     <h1 className="text-xl sm:text-2xl font-bold text-gray-800 leading-snug">
@@ -450,7 +449,7 @@ const ProductDetail = () => {
 
                                 <div className="flex items-center gap-4 text-sm pb-4 border-b border-gray-100">
                                     <div className="flex items-center gap-1">
-                                        <span className="font-bold text-[#ed792f] text-base underline decoration-solid">
+                                        <span className="font-bold text-[#006837] text-base underline decoration-solid">
                                             {Number(reviewSummary.averageRating || 0).toFixed(1)}
                                         </span>
                                         <div className="flex text-amber-400">
@@ -474,12 +473,12 @@ const ProductDetail = () => {
                                     </div>
                                 </div>
 
-                                <div className="my-5 p-4 rounded-lg bg-[#fafafa] flex items-baseline gap-3">
-                                    <span className="text-3xl sm:text-4xl font-black text-[#ed792f] tracking-tight">
-                                        {Number(product.price || 0).toLocaleString('vi-VN')}₫
+                                <div className="my-5 p-4 rounded-lg bg-emerald-50/40 border border-emerald-100/50 flex items-baseline gap-3">
+                                    <span className="text-3xl sm:text-4xl font-black text-[#006837] tracking-tight">
+                                        {Number(product.price) > 0 ? `${Number(product.price).toLocaleString('vi-VN')}₫` : 'Liên hệ'}
                                     </span>
-                                    <span className="text-xs font-medium text-gray-400">
-                                        Giá niêm yết chính hãng
+                                    <span className="text-xs font-medium text-emerald-800/70">
+                                        Giá niêm yết chính hãng LKVN
                                     </span>
                                 </div>
 
@@ -487,19 +486,19 @@ const ProductDetail = () => {
                                     <div className="flex items-start gap-6">
                                         <span className="w-28 shrink-0 text-gray-500 font-medium">Vận Chuyển</span>
                                         <div className="flex items-center gap-2 text-gray-700">
-                                            <Truck size={18} className="text-[#ed792f]" />
+                                            <Truck size={18} className="text-[#006837]" />
                                             <span>Giao hàng toàn quốc - Quốc tế</span>
                                         </div>
                                     </div>
 
                                     <div className="flex items-start gap-6">
                                         <span className="w-28 shrink-0 text-gray-500 font-medium leading-tight">
-                                            An Tâm <br /> Mua Sắm Cùng <strong className="text-gray-700 block">CMIC STUDIO</strong>
+                                            An Tâm <br /> Mua Sắm Cùng <strong className="text-gray-700 block">THẢO DƯỢC LKVN</strong>
                                         </span>
                                         <div className="flex items-start gap-2 text-gray-700">
-                                            <ShieldCheck size={18} className="text-[#ed792f] shrink-0 mt-0.5" />
+                                            <ShieldCheck size={18} className="text-[#006837] shrink-0 mt-0.5" />
                                             <span className="leading-relaxed">
-                                                Hàng chính hãng 100% - Hỗ trợ kỹ thuật 24/7 - Bảo hành lên đến 12 tháng
+                                                Dược liệu sạch đạt chuẩn GMP - Không đường hóa học - Hỗ trợ tư vấn chuyên môn 24/7
                                             </span>
                                         </div>
                                     </div>
@@ -507,7 +506,7 @@ const ProductDetail = () => {
                                     <div className="flex items-center gap-6">
                                         <span className="w-28 shrink-0 text-gray-500 font-medium">Phân Loại</span>
                                         <div className="flex flex-wrap gap-2">
-                                            <span className="px-3.5 py-1.5 rounded border border-[#ed792f] bg-orange-50 text-[#ed792f] font-semibold text-xs">
+                                            <span className="px-3.5 py-1.5 rounded border border-[#006837] bg-emerald-50 text-[#006837] font-semibold text-xs">
                                                 {product.maSP || product.Category?.name || "Tiêu chuẩn"}
                                             </span>
                                         </div>
@@ -537,7 +536,7 @@ const ProductDetail = () => {
                                                 <Plus size={14} />
                                             </button>
                                         </div>
-                                        <span className="text-xs text-gray-400">Có sẵn sản phẩm tại cửa hàng</span>
+                                        <span className="text-xs text-gray-400">Có sẵn sản phẩm tại trung tâm</span>
                                     </div>
                                 </div>
 
@@ -545,7 +544,7 @@ const ProductDetail = () => {
                                     <button
                                         type="button"
                                         onClick={handleAddToCart}
-                                        className="w-full min-h-[52px] flex items-center justify-center gap-2 border border-[#ed792f] bg-[#ed792f]/10 text-[#ed792f] hover:bg-[#ed792f]/20 font-bold px-4 rounded-lg transition text-sm sm:text-base"
+                                        className="w-full min-h-[52px] flex items-center justify-center gap-2 border border-[#006837] bg-emerald-50 text-[#006837] hover:bg-emerald-100 font-bold px-4 rounded-lg transition text-sm sm:text-base"
                                     >
                                         <ShoppingCart size={20} className="shrink-0" />
                                         <span className="whitespace-nowrap">Thêm Vào Giỏ Hàng</span>
@@ -554,16 +553,16 @@ const ProductDetail = () => {
                                     <button
                                         type="button"
                                         onClick={handleBuyNow}
-                                        className="w-full min-h-[52px] flex flex-col items-center justify-center bg-[#ed792f] hover:bg-[#d86620] text-white font-bold px-4 rounded-lg shadow-sm transition active:scale-98"
+                                        className="w-full min-h-[52px] flex flex-col items-center justify-center bg-[#006837] hover:bg-[#00522b] text-white font-bold px-4 rounded-lg shadow-sm transition active:scale-98"
                                     >
                                         <span className="text-xs sm:text-sm leading-tight font-medium opacity-95">Mua Ngay</span>
                                         <span className="text-sm sm:text-base font-extrabold leading-tight">
-                                            {Number(product.price || 0).toLocaleString('vi-VN')}₫
+                                            {Number(product.price) > 0 ? `${Number(product.price).toLocaleString('vi-VN')}₫` : 'Liên hệ'}
                                         </span>
                                     </button>
 
                                     <a
-                                        href="https://zalo.me/0372672396"
+                                        href="https://zalo.me/0964685128"
                                         target="_blank"
                                         rel="noreferrer"
                                         className="w-full min-h-[52px] flex items-center justify-center gap-2.5 border border-blue-400 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold px-4 rounded-lg transition text-sm sm:text-base"
@@ -574,13 +573,14 @@ const ProductDetail = () => {
                                         <span className="whitespace-nowrap">Tư vấn Zalo</span>
                                     </a>
                                 </div>
+
                             </div>
 
                         </div>
                     </div>
 
-                    {/* Chi tiết Sản Phẩm (Hỗ trợ nhúng video YouTube) */}
-                    <div className="p-4 sm:p-6 lg:p-8">
+                    {/* Chi tiết Sản Phẩm */}
+                    <div className="p-4 sm:p-6 lg:p-8 border-t border-gray-100">
                         <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wide border-b border-gray-100 pb-3 mb-5">
                             Chi tiết Sản Phẩm
                         </h2>
@@ -592,8 +592,8 @@ const ProductDetail = () => {
                         />
                     </div>
 
-                    {/* Mô Tả Sản Phẩm (Hỗ trợ nhúng video YouTube) */}
-                    <div className="p-4 sm:p-6 lg:p-8">
+                    {/* Mô Tả Sản Phẩm */}
+                    <div className="p-4 sm:p-6 lg:p-8 border-t border-gray-100">
                         <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wide border-b border-gray-100 pb-3 mb-5">
                             Mô Tả Sản Phẩm
                         </h2>
@@ -605,13 +605,14 @@ const ProductDetail = () => {
                         />
                     </div>
 
-                    <div className="p-4 sm:p-6 lg:p-8">
+                    {/* Đánh Giá Khách Hàng */}
+                    <div className="p-4 sm:p-6 lg:p-8 border-t border-gray-100">
                         <h2 className="text-lg font-bold text-gray-800 uppercase tracking-wide border-b border-gray-100 pb-4 mb-6">
                             ĐÁNH GIÁ KHÁCH HÀNG
                         </h2>
 
                         {reviewEligibility?.canReview && (
-                            <form onSubmit={handleSubmitReview} className="mb-8 rounded-xl border border-orange-100 bg-orange-50/50 p-4 sm:p-5">
+                            <form onSubmit={handleSubmitReview} className="mb-8 rounded-xl border border-emerald-100 bg-emerald-50/40 p-4 sm:p-5">
                                 <h3 className="font-semibold text-gray-800">
                                     {reviewEligibility.review ? "Cập nhật đánh giá của bạn" : "Chia sẻ trải nghiệm sản phẩm"}
                                 </h3>
@@ -635,14 +636,14 @@ const ProductDetail = () => {
                                     required
                                     rows={4}
                                     placeholder="Nhập nhận xét của bạn về sản phẩm..."
-                                    className="mt-3 w-full resize-y rounded-lg border border-gray-200 bg-white p-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                                    className="mt-3 w-full resize-y rounded-lg border border-gray-200 bg-white p-3 text-sm outline-none focus:border-[#006837] focus:ring-2 focus:ring-emerald-100"
                                 />
                                 <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
                                     <span className="text-xs text-gray-500">{reviewComment.length}/2000 ký tự</span>
                                     <button
                                         type="submit"
                                         disabled={reviewSaving || !reviewComment.trim()}
-                                        className="rounded-lg bg-[#ed792f] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#d86620] disabled:cursor-not-allowed disabled:opacity-60"
+                                        className="rounded-lg bg-[#006837] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#00522b] disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                         {reviewSaving ? "Đang gửi..." : reviewEligibility.review ? "Lưu đánh giá" : "Gửi đánh giá"}
                                     </button>
